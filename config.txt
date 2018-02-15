@@ -1,0 +1,23 @@
+#UR_FIELD  PARAM1, PARAM2, ...
+        #soft_min_value, soft_max_value, hard_min_value, hard_max_value, soft_value_period
+        #data_change_up, data_change_down, data_change_mode (average, last_value), 
+        #moving_average_type (median, average)
+        #variance (implicit -> doesn't have to be specified)
+        #series_length
+        #period_check
+        #learning records
+        #store_mode (difference between new value and last value -> stores just delta values (delta), difference between new value and average (average), directly push the value (simple) )
+        #model_refresh_interval
+        #export_interval
+        #DYNAMIC VALUES FOR MODUlE FUNCTIONALITY
+            - number of rotates
+            - series average value
+            - prev value
+            - sum x
+            - sum x2
+SOAFCount: -,-,-,-,-,5,0.5,average,median,10,-,10,delta,-,-
+VALUE: 1,5,-10,10,5,2,0.2,average,average,10,-,10,simple,-,-
+aclPackets: -,-,-,-,-,5,0.5,average,variance,3,-,5,delta,-,-
+
+#enum configParams {SOFT_MIN, SOFT_MAX, HARD_MIN, HARD_MAX, SOFT_PERIOD, GROW_UP, GROW_DOWN, GROW_MODE, AVERAGE_TYPE, SERIES_LENGTH, PERIOD_CHECK, LEARNING_LENGTH, STORE_MODE, MODEL_REFRESH, EXPORT_INTERVAL, ROTATE, AVERAGE, PREV_VALUE, SX, SX2};
+

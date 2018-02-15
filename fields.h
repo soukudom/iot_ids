@@ -1,0 +1,113 @@
+#ifndef _UR_FIELDS_H_
+#define _UR_FIELDS_H_
+
+/************* THIS IS AUTOMATICALLY GENERATED FILE, DO NOT EDIT *************/
+#include <unirec/unirec.h>
+
+#define F_ACKCount   0
+#define F_ACKCount_T   double
+#define F_ACKWaiting   1
+#define F_ACKWaiting_T   double
+#define F_aclPackets   2
+#define F_aclPackets_T   double
+#define F_address   3
+#define F_address_T   double
+#define F_averageRequestRTT   4
+#define F_averageRequestRTT_T   double
+#define F_averageResponseRTT   5
+#define F_averageResponseRTT_T   double
+#define F_badChecksum   6
+#define F_badChecksum_T   double
+#define F_badroutes   7
+#define F_badroutes_T   double
+#define F_broadcastReadCount   8
+#define F_broadcastReadCount_T   double
+#define F_broadcastWriteCount   9
+#define F_broadcastWriteCount_T   double
+#define F_callbacks   10
+#define F_callbacks_T   double
+#define F_CANCount   11
+#define F_CANCount_T   double
+#define F_dropped   12
+#define F_dropped_T   double
+#define F_GW_ID   13
+#define F_GW_ID_T   uint64_t
+#define F_ID   14
+#define F_ID_T   uint64_t
+#define F_lastRequestRTT   15
+#define F_lastRequestRTT_T   double
+#define F_lastResponseRTT   16
+#define F_lastResponseRTT_T   double
+#define F_NAKCount   17
+#define F_NAKCount_T   double
+#define F_netBusy   18
+#define F_netBusy_T   double
+#define F_noACK   19
+#define F_noACK_T   double
+#define F_nodeID   20
+#define F_nodeID_T   double
+#define F_nonDelivery   21
+#define F_nonDelivery_T   double
+#define F_notIdle   22
+#define F_notIdle_T   double
+#define F_OOFCount   23
+#define F_OOFCount_T   double
+#define F_quality   24
+#define F_quality_T   double
+#define F_readAborts   25
+#define F_readAborts_T   double
+#define F_readCount   26
+#define F_readCount_T   double
+#define F_receivedCount   27
+#define F_receivedCount_T   double
+#define F_receiveDuplications   28
+#define F_receiveDuplications_T   double
+#define F_receiveUnsolicited   29
+#define F_receiveUnsolicited_T   double
+#define F_retries   30
+#define F_retries_T   double
+#define F_routedBusy   31
+#define F_routedBusy_T   double
+#define F_rxAcls   32
+#define F_rxAcls_T   double
+#define F_rxBytes   33
+#define F_rxBytes_T   double
+#define F_rxErrors   34
+#define F_rxErrors_T   double
+#define F_rxEvents   35
+#define F_rxEvents_T   double
+#define F_rxScos   36
+#define F_rxScos_T   double
+#define F_scoMtu   37
+#define F_scoMtu_T   double
+#define F_scoPackets   38
+#define F_scoPackets_T   double
+#define F_sentCount   39
+#define F_sentCount_T   double
+#define F_sentFailed   40
+#define F_sentFailed_T   double
+#define F_SOAFCount   41
+#define F_SOAFCount_T   double
+#define F_txAcls   42
+#define F_txAcls_T   double
+#define F_txBytes   43
+#define F_txBytes_T   double
+#define F_txCmds   44
+#define F_txCmds_T   double
+#define F_txErrors   45
+#define F_txErrors_T   double
+#define F_txScos   46
+#define F_txScos_T   double
+#define F_VALUE   47
+#define F_VALUE_T   double
+#define F_writeCount   48
+#define F_writeCount_T   double
+#define F_TIME   49
+#define F_TIME_T   int32_t
+
+extern uint16_t ur_last_id;
+extern ur_static_field_specs_t UR_FIELD_SPECS_STATIC;
+extern ur_field_specs_t ur_field_specs;
+
+#endif
+
