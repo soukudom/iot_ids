@@ -23,33 +23,19 @@ trap_module_info_t *module_info = NULL;
 
 //test print function 
 //auto specifier in function parameter is available from c++14
-void printSeries( map<string,vector<string> >& series_meta_data){
-     for (auto element : series_meta_data) {
-        cout << "key: " << element.first << endl;
-        cout << "values: " << endl;
-        for (auto elem: element.second){
-            cout << " " << elem << endl;
+void printSeries( map<string,map<string, vector<string> > >& series_meta_data){
+    cout << "printSeries method" << endl;
+    for (auto main_key: series_meta_data){
+        cout << "main key: " << main_key.first << endl;
+         for (auto element : series_meta_data[main_key.first]) {
+            cout << " key: " << element.first << endl;
+            cout << "  values: " << endl;
+            for (auto elem: element.second){
+                cout << "   " << elem << endl;
+            }   
         }   
-    }   
-}
-
-void initSeries(map<string,vector<string> >& series_meta_data, string ur_field, uint64_t ur_id, int ur_time, double ur_value){
-    map<string, map<int, vector<double> > > control;
-
-    for (auto element : series_meta_data) {
-        //assume that we don't have duplicates -> config file will be auto generated in production
-        //TODO confige file format check
-        std::string str_dec = element.second[SERIES_LENGTH];
-        std::string::size_type sz;
-        int i_dec = std::stoi (str_dec,&sz);
-        
-        vector<double> tmp (i_dec);//(element.second[SERIES_LENGTH]);
-        cout << "val: " << element.second[SERIES_LENGTH] << endl;  
     }
-
 }
-
-void processSeries(){}
 
 int main (int argc, char** argv){
     
@@ -70,11 +56,8 @@ int main (int argc, char** argv){
     auto series_meta_data = cp.getSeries();
 
     Analyzer series_a (series_meta_data);
-    //series_a.processSeries();
 
-    //printSeries(series_meta_data);
-    //initSeries(series_meta_data);
-  
+//    printSeries(series_meta_data);
  
     //**interface initialization**
     //Allocate and initialize module_info structure and all its members
@@ -181,18 +164,10 @@ int main (int argc, char** argv){
             ur_data = (double*) ur_get_ptr_by_id(in_template, data_nemea_input,id);
             //cout << "received data: " << *ur_id << ", " << *ur_time << ", " << *ur_data << endl;
 
-            //initSeries(series_meta_data, ur_id, ur_time, ur_data);
             series_a.processSeries(ur_get_name(id), ur_id, ur_time, ur_data);
 
         }
-        //process received data
-        //initSeries(series_meta_data, ur_get_name(id), );
-        //processSeries();
-
-
-
     }
-
 
 cleanup:
    //cleaning
