@@ -109,19 +109,15 @@ int main (int argc, char** argv){
     }
 
     ctx = trap_ctx_init(module_info, ifc_spec);
-    //ret = trap_init(module_info, ifc_spec);
 
     if (ctx == NULL) {
-   // if (ret != TRAP_E_OK) {
         cerr << "ERROR in TRAP initialization: " << trap_last_error_msg << endl;
         exit_value=1;
         goto cleanup;
     }
 
     //input interface control settings
-    
     if (trap_ctx_ifcctl(ctx, TRAPIFC_INPUT, 0, TRAPCTL_SETTIMEOUT, TRAP_WAIT) != TRAP_E_OK) {
-    //if (trap_ifcctl(TRAPIFC_INPUT, 0, TRAPCTL_SETTIMEOUT, TRAP_WAIT) != TRAP_E_OK) {
         cerr << "ERROR in input interface initialization" << endl;
         exit_value=2;
         goto cleanup;
@@ -158,14 +154,12 @@ int main (int argc, char** argv){
         ur_field_id_t id = UR_ITER_BEGIN;
         while ((id = ur_iter_fields(in_template, id)) != UR_ITER_END) {
             //skip id and time values
-            if ( strcmp("ID",(ur_get_name(id))) == 0 || strcmp("TIME",(ur_get_name(id))) == 0 ){
+            if ( strcmp("ID",(ur_get_name(id))) == 0 /*|| strcmp("TIME",(ur_get_name(id))) == 0*/ ){
                 continue;
             }
             ur_data = (double*) ur_get_ptr_by_id(in_template, data_nemea_input,id);
-            //cout << "received data: " << *ur_id << ", " << *ur_time << ", " << *ur_data << endl;
 
             series_a.processSeries(ur_get_name(id), ur_id, ur_time, ur_data);
-
         }
     }
 
