@@ -45,6 +45,7 @@ char *ur_field_names_static[] = {
    "sentCount",
    "sentFailed",
    "SOAFCount",
+   "TIME",
    "txAcls",
    "txBytes",
    "txCmds",
@@ -52,7 +53,6 @@ char *ur_field_names_static[] = {
    "txScos",
    "VALUE",
    "writeCount",
-   "TIME",
 };
 short ur_field_sizes_static[] = {
    8, /* ACKCount */
@@ -97,6 +97,7 @@ short ur_field_sizes_static[] = {
    8, /* sentCount */
    8, /* sentFailed */
    8, /* SOAFCount */
+   8, /* TIME */
    8, /* txAcls */
    8, /* txBytes */
    8, /* txCmds */
@@ -104,7 +105,6 @@ short ur_field_sizes_static[] = {
    8, /* txScos */
    8, /* VALUE */
    8, /* writeCount */
-   4, /* TIME */
 };
 ur_field_type_t ur_field_types_static[] = {
    UR_TYPE_DOUBLE, /* ACKCount */
@@ -149,6 +149,7 @@ ur_field_type_t ur_field_types_static[] = {
    UR_TYPE_DOUBLE, /* sentCount */
    UR_TYPE_DOUBLE, /* sentFailed */
    UR_TYPE_DOUBLE, /* SOAFCount */
+   UR_TYPE_DOUBLE, /* TIME */
    UR_TYPE_DOUBLE, /* txAcls */
    UR_TYPE_DOUBLE, /* txBytes */
    UR_TYPE_DOUBLE, /* txCmds */
@@ -156,7 +157,6 @@ ur_field_type_t ur_field_types_static[] = {
    UR_TYPE_DOUBLE, /* txScos */
    UR_TYPE_DOUBLE, /* VALUE */
    UR_TYPE_DOUBLE, /* writeCount */
-   UR_TYPE_INT32, /* TIME */
 };
 ur_static_field_specs_t UR_FIELD_SPECS_STATIC = {ur_field_names_static, ur_field_sizes_static, ur_field_types_static, 50};
 ur_field_specs_t ur_field_specs = {ur_field_names_static, ur_field_sizes_static, ur_field_types_static, 50, 50, 50, NULL, UR_UNINITIALIZED};

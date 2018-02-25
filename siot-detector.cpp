@@ -47,7 +47,7 @@ int main (int argc, char** argv){
     int verbose = 0;
 
     uint64_t *ur_id = 0;
-    int *ur_time = 0;  
+    double *ur_time = 0;  
     double *ur_data = 0;
     uint8_t data_fmt = TRAP_FMT_UNIREC;
 
@@ -158,7 +158,7 @@ int main (int argc, char** argv){
                 continue;
             }
             ur_data = (double*) ur_get_ptr_by_id(in_template, data_nemea_input,id);
-
+//            cout << "ur_data: " << ur_get_name(id) << ": " << *ur_data << endl;
             series_a.processSeries(ur_get_name(id), ur_id, ur_time, ur_data);
         }
     }

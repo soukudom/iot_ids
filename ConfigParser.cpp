@@ -64,6 +64,7 @@ ConfigParser::ConfigParser(string configFile) : config(configFile){
             //insert dynamic values
             for (int i=0; i < DYNAMIC; i++){
                 series[key]["metaProfile"].push_back(to_string(0));
+                series[key]["metaData"].push_back("x");
             }
         }
         config.close();
