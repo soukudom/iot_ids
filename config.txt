@@ -22,5 +22,5 @@
 #enum configParams {SOFT_MIN, SOFT_MAX, HARD_MIN, HARD_MAX, SOFT_PERIOD, GROW_UP, GROW_DOWN, GROW_MODE, AVERAGE_TYPE, SERIES_LENGTH, PERIOD_CHECK, LEARNING_LENGTH, STORE_MODE, MODEL_REFRESH, EXPORT_INTERVAL, ROTATE, AVERAGE, PREV_VALUE, SX, SX2};
 
 
-aclPackets: 3;5;simple;-;-;profile(average,variance,median,cum_average,);average(1,5,-10,10,5,2,0.2,average,-,);variance(0,10,0,20,5,3,0.3,average,0,);export(-,);
-TIME: 3;5;delta;-;-;profile(average,variance,median,cum_average,);average(1,5,-10,10,5,2,0.2,average,-,);variance(0,10,0,20,5,3,0.3,average,0,);export(-,);
+aclPackets: 3;5;simple;-;-;profile(average,variance,median,cum_average,);average(1,5,-10,10,5,2,0.2,-,0,0,);variance(0,10,0,20,5,3,0.3,0,0,0,);median(1,5,-10,10,5,2,0.2,-,0,0,);cum_average(1,5,-10,10,5,2,0.2,-,0,0,);prev_value(-,-,-,-,-,-,-,-,0,0,);export(-,);
+TIME: 3;5;delta;-;-;profile(average,variance,median,cum_average,);average(1,5,-10,10,5,2,0.2,-,0,0,);variance(0,10,0,20,5,3,0.3,0,0,0,);median(1,5,-10,10,5,2,0.2,-,0,0,);cum_average(1,5,-10,10,5,2,0.2,-,0,0,);prev_value(-,-,-,-,-,-,-,-,0,0,);export(-,);

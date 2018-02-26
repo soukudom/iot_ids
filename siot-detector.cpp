@@ -57,7 +57,7 @@ int main (int argc, char** argv){
 
     Analyzer series_a (series_meta_data);
 
-//    printSeries(series_meta_data);
+    //printSeries(series_meta_data);
  
     //**interface initialization**
     //Allocate and initialize module_info structure and all its members

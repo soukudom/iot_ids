@@ -27,7 +27,7 @@ private:
     //initialize data series structures
     int initSeries(string &ur_field, uint64_t *ur_id, double *ur_data);
     //analyze data series data
-    void analyzeData(string ur_field, uint64_t *ur_id, double *ur_data);
+    void analyzeData(string ur_field, uint64_t *ur_id, double *ur_data, double *ur_time);
     //set reference profile values
     void modifyMetaData(string &ur_field, uint64_t *ur_id, map<string, map<string, vector<string> > >::iterator &meta_it, map<int, vector<double> >::iterator &sensor_it, string meta_id);
     //push data to the control structure
@@ -40,5 +40,9 @@ private:
     double getCumulativeAverage(map<int,vector<double> >::iterator &sensor_it, map<string, map<string, vector<string> > >::iterator &meta_it, string meta_id);
     //print series data and meta information
     void printSeries(string &ur_field);
-};
+    /**alert detection methods**/
+    void dataLimitCheck(map<string, map<string, vector<string> > >::iterator &meta_it, string ur_field, uint64_t *ur_id, double *ur_time ,double *ur_data);
+    void dataChangeCheck(map<string, map<string, vector<string> > >::iterator &meta_it, string ur_field, uint64_t *ur_id, double *ur_time ,double *ur_data);
+    int getIndex(string name);
     
+};
