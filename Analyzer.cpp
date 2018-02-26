@@ -111,12 +111,10 @@ double Analyzer::pushData(double *ur_data, map<string, map<string, vector<string
         new_value = *ur_data;
     }
     else if (store_mode == "average"){
-        //double average = stod (meta_it->second["metaProfile"][AVERAGE],nullptr);
         double average = stod (meta_it->second[meta_id][AVERAGE],nullptr);
         new_value = *ur_data - average;
     }
     else if (store_mode == "delta"){
-        //double prev_value = stod (meta_it->second["metaProfile"][P_PREV_VALUE],nullptr);
         double prev_value = stod (meta_it->second[meta_id][PREV_VALUE],nullptr);
         new_value = *ur_data - prev_value;
         meta_it->second[meta_id][PREV_VALUE] = to_string(*ur_data);
@@ -134,6 +132,8 @@ double Analyzer::pushData(double *ur_data, map<string, map<string, vector<string
         //back()
         sensor_it->second.back() = new_value;
     }
+    //new value field is useful just for alert detection methods -> not relevant in metaProfile
+    meta_it->second["metaData"][NEW_VALUE] = to_string(new_value);
     return new_value;
 }
 
@@ -271,7 +271,7 @@ void Analyzer::printSeries(string &ur_field){
             cout << elem << ", ";
         }
         cout << endl;
-        cout << "   AVERAGE, VARIANCE, MEDIAN, CUM_AVERAGE, SX, SX2, PREV_VALUE, ROTATE" << endl;
+        cout << "   AVERAGE, VARIANCE, MEDIAN, CUM_AVERAGE, SX, SX2, PREV_VALUE, NEW_VALUE, ROTATE" << endl;
         cout << "   ";
         for (auto meta: series_meta_data[ur_field]["metaProfile"] ){
             cout.precision(1);
@@ -300,16 +300,16 @@ int Analyzer::getIndex(string name){
     else if (name == "cum_average"){
         return CUM_AVERAGE;
     }
-    else if (name == "last_value"){
-        return PREV_VALUE;
+    else if (name == "new_value"){
+        return NEW_VALUE;
     }
 }
 
 void Analyzer::dataLimitCheck(map<string, map<string, vector<string> > >::iterator &meta_it, string ur_field, uint64_t *ur_id, double *ur_time ,double *ur_data){
 
     for (auto profile_values: meta_it->second["profile"]){
-        //test if soft limit is set
-        //soft & hard limits are dependent -> test for soft min is ok
+        //test if soft limits are set
+        //soft min, max limits are dependent -> test for soft min is ok
         if (meta_it->second[profile_values][SOFT_MIN] != "-"){
         
             //soft limit test 
@@ -344,7 +344,10 @@ void Analyzer::dataLimitCheck(map<string, map<string, vector<string> > >::iterat
                 //reset counter
                 meta_it->second[profile_values][S_MAX_LIMIT] = "0";
             }
-
+        }
+        //test if hard limits are set
+        //hard min, max limits are dependent -> test for hard min is ok
+        else if (meta_it->second[profile_values][HARD_MIN] != "-"){
             //hard limit test
             if (stod(meta_it->second["metaData"][getIndex(profile_values)],nullptr)  < stod(meta_it->second[profile_values][HARD_MIN],nullptr) ){
                 cout << "ERROR: hard min" << endl;
@@ -362,13 +365,33 @@ void Analyzer::dataLimitCheck(map<string, map<string, vector<string> > >::iterat
             }
         }
     }
-
 }
 
-
-void Analyzer::dataChangeCheck(map<string, map<string, vector<string> > >::iterator &meta_it, string ur_field, uint64_t *ur_id, double *ur_time ,double *ur_data){
+void Analyzer::dataChangeCheck(map<int,vector<double> >::iterator &sensor_it ,map<string, map<string, vector<string> > >::iterator &meta_it, string ur_field, uint64_t *ur_id, double *ur_time ,double *ur_data){
+    double alert_coef = 0;
+    double new_value = 0;
     
     for (auto profile_values: meta_it->second["profile"]){
+        new_value = sensor_it->second.back();
+        //test if grow limits are set
+        //grow up,down limits are dependent -> test for grow up is ok
+        if (meta_it->second[profile_values][GROW_UP] != "-"){
+            //divide by zero protection
+            if (stod(meta_it->second["metaData"][getIndex(profile_values)],nullptr) == 0 ){
+                alert_coef = 1; //-> mean no data grow change 
+            }
+            else {
+                alert_coef = new_value/stod(meta_it->second["metaData"][getIndex(profile_values)],nullptr);
+            }
+            //test grow limits
+            if (alert_coef > stod(meta_it->second[profile_values][GROW_UP],nullptr)){
+                cout << "ALERT: GROW UP" << endl;
+            }
+            
+            if (alert_coef < stod(meta_it->second[profile_values][GROW_DOWN],nullptr)){
+                cout << "ALERT: GROW DOWN" << endl;
+            }
+        }
         
     }
 }
@@ -383,7 +406,7 @@ void Analyzer::analyzeData(string ur_field, uint64_t *ur_id, double *ur_data, do
     //soft,hard limit check
     dataLimitCheck(meta_it, ur_field, ur_id, ur_time ,ur_data);
     //grow check
-    dataChangeCheck(meta_it, ur_field, ur_id, ur_time, ur_data);
+    dataChangeCheck(sensor_it, meta_it, ur_field, ur_id, ur_time, ur_data);
 
     //push new data and do calculation
     pushData(ur_data, meta_it, sensor_it, "metaData");
