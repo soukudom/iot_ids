@@ -18,7 +18,7 @@ using namespace std;
 trap_module_info_t *module_info = NULL;
 
 #define MODULE_BASIC_INFO(BASIC) \
-  BASIC("data-series-detector", "This module detect anomalies in data series", 1, -1)
+  BASIC("data-series-detector", "This module detect anomalies in data series", 1, 1)
 #define MODULE_PARAMS(PARAM)
 
 //test print function 
@@ -42,6 +42,7 @@ int main (int argc, char** argv){
     int exit_value = 0; //detector return value
     static int n_inputs = 1; //number of input interface
     static ur_template_t * in_template = NULL; //UniRec input template
+    static ur_template_t * alert_template = NULL; //UniRec input template
     trap_ctx_t *ctx = NULL;
     int ret = 2;
     int verbose = 0;
@@ -122,12 +123,25 @@ int main (int argc, char** argv){
         exit_value=2;
         goto cleanup;
     }
+    //output interface control settings
+    if (trap_ctx_ifcctl(ctx, TRAPIFC_OUTPUT,0,TRAPCTL_SETTIMEOUT, TRAP_WAIT) != TRAP_E_OK){
+        cerr << "ERROR in output interface initialization" << endl;
+        exit_value=2;
+        goto cleanup;
+    }
     //create empty input template
     in_template = ur_ctx_create_input_template(ctx, 0, NULL, NULL);
     if (in_template == NULL) {
-        cerr <<  "ERROR: unirec template create fail" << endl;
+        cerr <<  "ERROR: unirec input template create fail" << endl;
         goto cleanup;
     }
+    //create empty alert template
+    alert_template = ur_ctx_create_output_template(ctx, 0, NULL, NULL);
+    if (alert_template == NULL) {
+        cerr <<  "ERROR: unirec alert template create fail" << endl;
+        goto cleanup;
+    }
+    
 
     //set required incoming format
     //trap_ctx_set_required_fmt(ctx, 0, TRAP_FMT_UNIREC, NULL);
@@ -159,7 +173,7 @@ int main (int argc, char** argv){
             }
             ur_data = (double*) ur_get_ptr_by_id(in_template, data_nemea_input,id);
 //            cout << "ur_data: " << ur_get_name(id) << ": " << *ur_data << endl;
-            series_a.processSeries(ur_get_name(id), ur_id, ur_time, ur_data);
+            series_a.processSeries(ur_get_name(id), ur_id, ur_time, ur_data/*, ctx, ctx2*/);
         }
     }
 

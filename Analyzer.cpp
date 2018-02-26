@@ -430,12 +430,20 @@ void Analyzer::processSeries(string ur_field, uint64_t *ur_id, double *ur_time, 
     * 4 - new item was added
     */
     init_state = initSeries(ur_field, ur_id, ur_data);
-    printSeries(ur_field);
+    if (init_state != 1){
+        printSeries(ur_field);
+    }
     
     if (init_state == 0){ 
         //analyze data series
         analyzeData(ur_field, ur_id, ur_data, ur_time);
     }
+
+    /*
+    periodicExport(ctx2);
+    periodicCheck(ctx);
+    sentAlert(ctx);
+    */
 }
 
 /* 
