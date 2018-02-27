@@ -15,7 +15,7 @@ public:
     Analyzer();
     Analyzer(map<string, map<string, vector<string> > > meta_data);
     virtual ~Analyzer();
-    void processSeries(string ur_field, uint64_t *ur_id, double *ur_time, double *ur_data, trap_ctx_t *alert, trap_ctx_t *d_export);
+    void processSeries(string ur_field, uint64_t *ur_id, double *ur_time, double *ur_data, trap_ctx_t *alert_ift, trap_ctx_t *data_export_ifc);
 
 private:
     /**atributes**/
@@ -39,7 +39,7 @@ private:
     int getIndex(string name);
     //add alert to the alert structure
     void addAlert(string &profile_name, string alert_message, map<string, vector<string> > &alert);
-    void sentAlert(map<string, vector<string> > &alert_str, trap_ctx_t *ctx);
+    void sentAlert(map<string, vector<string> > &alert_str, trap_ctx_t *ctx, string &ur_field, uint64_t *ur_id, double *ur_time);
 
 
     /**profile determination methods**/

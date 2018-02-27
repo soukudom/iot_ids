@@ -431,12 +431,23 @@ map<string,vector<string> > Analyzer::analyzeData(string ur_field, uint64_t *ur_
 
 }
 
-void Analyzer::sentAlert(map<string, vector<string> > &alert_str, trap_ctx_t *ctx){
+void Analyzer::sentAlert(map<string, vector<string> > &alert_str, trap_ctx_t *ctx, string &ur_field, uint64_t *ur_id, double *ur_time){
+    if (alert_str.empty()){
+        cout << "no alert" << endl;
+        return;
+    }
+     
+    for (auto profile: alert_str){
+        for (auto elem: profile.second){
+            cout << "sent: " << profile.first << ", " << elem << endl;
+        }
+        
+    }
 
 }
 
 //data series processing
-void Analyzer::processSeries(string ur_field, uint64_t *ur_id, double *ur_time, double *ur_data, trap_ctx_t *alert, trap_ctx_t *d_export) {
+void Analyzer::processSeries(string ur_field, uint64_t *ur_id, double *ur_time, double *ur_data, trap_ctx_t *alert_ifc, trap_ctx_t *data_export_ifc) {
     int init_state = 0;
     //initialize data series
     /*return 
@@ -453,8 +464,8 @@ void Analyzer::processSeries(string ur_field, uint64_t *ur_id, double *ur_time, 
     
     if (init_state == 0){ 
         //analyze data series
-        analyzeData(ur_field, ur_id, ur_data, ur_time);
-        
+        auto alert_str = analyzeData(ur_field, ur_id, ur_data, ur_time);
+        sentAlert(alert_str, alert_ifc, ur_field, ur_id, ur_time);
     }
 
     /*
