@@ -37,13 +37,86 @@ void printSeries( map<string,map<string, vector<string> > >& series_meta_data){
     }
 }
 
+//prepare output interfaces for periodic export
+int setExportInterfaces(map<string, map<string, vector<string> > > &series_meta_data,  ur_template_t ** utmpl_export_template, trap_ctx_t *ctx_export){
+    string interface_spec; //name of output interface specification
+    map<int,string> ur_export_fields; //map with unirec values for each interface
+    int flag = 0; //flag for definig output interface name
+    string field_name; //tmp value for ur_values
+    int number_of_keys = 0; //counter for number of export values
+
+    //go through configuration data
+    for (auto main_key: series_meta_data){
+        for (auto element : series_meta_data[main_key.first]) {
+            //find export key in configuration meta data
+            if (element.first == "export"){
+                //clear tmp variables
+                flag = 0;
+                field_name.clear();
+                for (auto elem: element.second){
+                    //skip empty values
+                    if(elem == "-"){
+                        continue;
+                    }
+                    //update tmp variables
+                    field_name += elem;
+                    if(flag == 0){
+                        interface_spec += "u:export-"+main_key.first+",";
+                        number_of_keys++;
+                        flag = 1;
+                    }
+                }   
+                //insert tmp variables to the map structure
+                ur_export_fields.insert(pair<int,string>(number_of_keys-1,field_name));
+            }
+        }
+    }
+
+    //no export parameters were specified
+    if (interface_spec.length() == 0){
+        return 1;
+    }
+    //remove last comma
+    interface_spec.pop_back();
+
+    //allocate memory for output export interface
+    utmpl_export_template = (ur_template_t **)calloc(number_of_keys,sizeof(*utmpl_export_template));
+    if (utmpl_export_template == NULL){
+        cerr << "ERROR: Export output template allocation error" << endl;
+        return 2;
+    }
+
+    //interface initialization
+    ctx_export = trap_ctx_init3("data-periodic-export", "Export data profile periodicaly",0,number_of_keys,interface_spec.c_str(),NULL);
+    if (ctx_export == NULL){
+        cerr << "ERROR: Data export interface initialization failed" << endl;
+        return 3;
+    }
+
+    //interface control & create unirec template
+    for (int i = 0; i < number_of_keys; i++ ){
+        if ( trap_ctx_ifcctl(ctx_export, TRAPIFC_OUTPUT,i,TRAPCTL_SETTIMEOUT,TRAP_WAIT) != TRAP_E_OK ) {
+            cerr << "ERROR: export interface control setup failed" << endl;
+            return 4;
+        }
+
+        utmpl_export_template[i] = ur_ctx_create_output_template(ctx_export,i,ur_export_fields[i].c_str(),NULL);
+        if ( utmpl_export_template[i] == NULL ) {
+            cerr << "ERROR: Unable to define unirec fields" << endl;
+            return 5;
+        }
+    }
+    return 0;
+}
+
 int main (int argc, char** argv){
     
     int exit_value = 0; //detector return value
-    static int n_inputs = 1; //number of input interface
     static ur_template_t * in_template = NULL; //UniRec input template
-    static ur_template_t * alert_template = NULL; //UniRec input template
+    static ur_template_t * alert_template = NULL; //UniRec output template
+    ur_template_t **utmpl_export_template;
     trap_ctx_t *ctx = NULL;
+    trap_ctx_t *ctx_export = NULL;
     int ret = 2;
     int verbose = 0;
 
@@ -57,6 +130,7 @@ int main (int argc, char** argv){
     auto series_meta_data = cp.getSeries();
 
     Analyzer series_a (series_meta_data);
+
 
     //printSeries(series_meta_data);
  
@@ -86,24 +160,19 @@ int main (int argc, char** argv){
         }   
     }
 
+    
     verbose = trap_get_verbose_level();
     if (verbose >= 0) {
         cout << "Verbosity level: " <<  trap_get_verbose_level() << endl;;
     }
 
-    if (verbose >= 0) {
-        cerr << "Number of inputs: " <<  n_inputs << endl;
-    }
-
-    //check input parameter
-    if (n_inputs != 1) {
-        cerr <<  "Error: Number of input interfaces must be 1" << endl;
+    //check number of interfaces parameter
+    if (strlen(ifc_spec.types) != 2) {
+        cerr <<  "Error: Module requires just one input and one output interface" << endl;
         FREE_MODULE_INFO_STRUCT(MODULE_BASIC_INFO, MODULE_PARAMS)
         return 4;
     }
 
-    // Set number of input interfaces
-    module_info->num_ifc_in = n_inputs;
 
     if (verbose >= 0) {
         cout << "Initializing TRAP library ..." << endl;
@@ -142,14 +211,19 @@ int main (int argc, char** argv){
         goto cleanup;
     }
     
-
     //set required incoming format
     //trap_ctx_set_required_fmt(ctx, 0, TRAP_FMT_UNIREC, NULL);
+
+    //initialize export output interfaces
+    ret = setExportInterfaces(series_meta_data, utmpl_export_template, ctx_export);
+    if (ret > 1){
+        exit_value=2;
+        goto cleanup;
+    }
 
     if (verbose >= 0) {
         cout << "Initialization done" << endl;
     }
-
 
     //main loop
     while (true){
@@ -172,14 +246,14 @@ int main (int argc, char** argv){
                 continue;
             }
             ur_data = (double*) ur_get_ptr_by_id(in_template, data_nemea_input,id);
-//            cout << "ur_data: " << ur_get_name(id) << ": " << *ur_data << endl;
-            series_a.processSeries(ur_get_name(id), ur_id, ur_time, ur_data/*, ctx, ctx2*/);
+            series_a.processSeries(ur_get_name(id), ur_id, ur_time, ur_data, ctx, ctx_export);
         }
     }
 
 cleanup:
-   //cleaning
-   trap_ctx_finalize(&ctx);
-   return exit_value;
+    //cleaning
+    trap_ctx_finalize(&ctx);
+    trap_ctx_finalize(&ctx_export);
+    return exit_value;
 
 }

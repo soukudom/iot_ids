@@ -7,6 +7,7 @@ char *ur_field_names_static[] = {
    "ACKWaiting",
    "aclPackets",
    "address",
+   "average",
    "averageRequestRTT",
    "averageResponseRTT",
    "badChecksum",
@@ -15,11 +16,13 @@ char *ur_field_names_static[] = {
    "broadcastWriteCount",
    "callbacks",
    "CANCount",
+   "cum_average",
    "dropped",
    "GW_ID",
    "ID",
    "lastRequestRTT",
    "lastResponseRTT",
+   "median",
    "NAKCount",
    "netBusy",
    "noACK",
@@ -52,6 +55,7 @@ char *ur_field_names_static[] = {
    "txErrors",
    "txScos",
    "VALUE",
+   "variance",
    "writeCount",
 };
 short ur_field_sizes_static[] = {
@@ -59,6 +63,7 @@ short ur_field_sizes_static[] = {
    8, /* ACKWaiting */
    8, /* aclPackets */
    8, /* address */
+   8, /* average */
    8, /* averageRequestRTT */
    8, /* averageResponseRTT */
    8, /* badChecksum */
@@ -67,11 +72,13 @@ short ur_field_sizes_static[] = {
    8, /* broadcastWriteCount */
    8, /* callbacks */
    8, /* CANCount */
+   8, /* cum_average */
    8, /* dropped */
    8, /* GW_ID */
    8, /* ID */
    8, /* lastRequestRTT */
    8, /* lastResponseRTT */
+   8, /* median */
    8, /* NAKCount */
    8, /* netBusy */
    8, /* noACK */
@@ -104,6 +111,7 @@ short ur_field_sizes_static[] = {
    8, /* txErrors */
    8, /* txScos */
    8, /* VALUE */
+   8, /* variance */
    8, /* writeCount */
 };
 ur_field_type_t ur_field_types_static[] = {
@@ -111,6 +119,7 @@ ur_field_type_t ur_field_types_static[] = {
    UR_TYPE_DOUBLE, /* ACKWaiting */
    UR_TYPE_DOUBLE, /* aclPackets */
    UR_TYPE_DOUBLE, /* address */
+   UR_TYPE_DOUBLE, /* average */
    UR_TYPE_DOUBLE, /* averageRequestRTT */
    UR_TYPE_DOUBLE, /* averageResponseRTT */
    UR_TYPE_DOUBLE, /* badChecksum */
@@ -119,11 +128,13 @@ ur_field_type_t ur_field_types_static[] = {
    UR_TYPE_DOUBLE, /* broadcastWriteCount */
    UR_TYPE_DOUBLE, /* callbacks */
    UR_TYPE_DOUBLE, /* CANCount */
+   UR_TYPE_DOUBLE, /* cum_average */
    UR_TYPE_DOUBLE, /* dropped */
    UR_TYPE_UINT64, /* GW_ID */
    UR_TYPE_UINT64, /* ID */
    UR_TYPE_DOUBLE, /* lastRequestRTT */
    UR_TYPE_DOUBLE, /* lastResponseRTT */
+   UR_TYPE_DOUBLE, /* median */
    UR_TYPE_DOUBLE, /* NAKCount */
    UR_TYPE_DOUBLE, /* netBusy */
    UR_TYPE_DOUBLE, /* noACK */
@@ -156,7 +167,8 @@ ur_field_type_t ur_field_types_static[] = {
    UR_TYPE_DOUBLE, /* txErrors */
    UR_TYPE_DOUBLE, /* txScos */
    UR_TYPE_DOUBLE, /* VALUE */
+   UR_TYPE_DOUBLE, /* variance */
    UR_TYPE_DOUBLE, /* writeCount */
 };
-ur_static_field_specs_t UR_FIELD_SPECS_STATIC = {ur_field_names_static, ur_field_sizes_static, ur_field_types_static, 50};
-ur_field_specs_t ur_field_specs = {ur_field_names_static, ur_field_sizes_static, ur_field_types_static, 50, 50, 50, NULL, UR_UNINITIALIZED};
+ur_static_field_specs_t UR_FIELD_SPECS_STATIC = {ur_field_names_static, ur_field_sizes_static, ur_field_types_static, 54};
+ur_field_specs_t ur_field_specs = {ur_field_names_static, ur_field_sizes_static, ur_field_types_static, 54, 54, 54, NULL, UR_UNINITIALIZED};

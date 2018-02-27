@@ -1,4 +1,4 @@
 #!/bin/bash
 
-g++ siot-detector.cpp fields.cpp ConfigParser.cpp Analyzer.cpp Alert.cpp -o prg -ltrap -lpcap -lunirec --std=c++11 -Wno-write-strings
+g++ siot-detector.cpp fields.cpp ConfigParser.cpp Analyzer.cpp -o prg -ltrap -lpcap -lunirec --std=c++11 -Wno-write-strings
 #g++ siot-detector.cpp fields.cpp ConfigParser.cpp -o prg -ltrap -lpcap -lunirec --std=c++11 -Wno-write-strings

@@ -2,6 +2,9 @@
 #include <vector>
 #include <algorithm>
 #include <iostream>
+#include <libtrap/trap.h>
+#include <unirec/unirec.h>
+#include "fields.h"
 
 
 using namespace std;
@@ -12,7 +15,7 @@ public:
     Analyzer();
     Analyzer(map<string, map<string, vector<string> > > meta_data);
     virtual ~Analyzer();
-    void processSeries(string ur_field, uint64_t *ur_id, double *ur_time, double *ur_data);
+    void processSeries(string ur_field, uint64_t *ur_id, double *ur_time, double *ur_data, trap_ctx_t *alert, trap_ctx_t *d_export);
 
 private:
     /**atributes**/

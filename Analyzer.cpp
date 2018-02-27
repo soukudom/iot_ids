@@ -412,14 +412,12 @@ void Analyzer::analyzeData(string ur_field, uint64_t *ur_id, double *ur_data, do
     pushData(ur_data, meta_it, sensor_it, "metaData");
     modifyMetaData(ur_field,ur_id,meta_it, sensor_it, "metaData");
 
-    //period check - start thread in upper class ?
-    //start export thread in upper class ? 
     //do action - return result 
 
 }
 
 //data series processing
-void Analyzer::processSeries(string ur_field, uint64_t *ur_id, double *ur_time, double *ur_data) {
+void Analyzer::processSeries(string ur_field, uint64_t *ur_id, double *ur_time, double *ur_data, trap_ctx_t *alert, trap_ctx_t *d_export) {
     int init_state = 0;
     //initialize data series
     /*return 
