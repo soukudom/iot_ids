@@ -38,7 +38,7 @@ void printSeries( map<string,map<string, vector<string> > >& series_meta_data){
 }
 
 //prepare output interfaces for periodic export
-int setExportInterfaces(map<string, map<string, vector<string> > > &series_meta_data,  ur_template_t ** utmpl_export_template, trap_ctx_t *ctx_export){
+int setExportInterfaces(map<string, map<string, vector<string> > > &series_meta_data,  ur_template_t ** utmpl_export_template, trap_ctx_t *ctx_export, void **data_export){
     string interface_spec; //name of output interface specification
     map<int,string> ur_export_fields; //map with unirec values for each interface
     int flag = 0; //flag for definig output interface name
@@ -81,6 +81,7 @@ int setExportInterfaces(map<string, map<string, vector<string> > > &series_meta_
 
     //allocate memory for output export interface
     utmpl_export_template = (ur_template_t **)calloc(number_of_keys,sizeof(*utmpl_export_template));
+    data_export = (void **) calloc(number_of_keys,sizeof(void *));
     if (utmpl_export_template == NULL){
         cerr << "ERROR: Export output template allocation error" << endl;
         return 2;
@@ -105,6 +106,13 @@ int setExportInterfaces(map<string, map<string, vector<string> > > &series_meta_
             cerr << "ERROR: Unable to define unirec fields" << endl;
             return 5;
         }
+
+        data_export[i] = ur_create_record(utmpl_export_template[i], 0);
+        if ( data_export[i] == NULL ) { 
+            cout << "Error: Data are not prepared for the export template" << endl;
+            return 6;
+        }
+
     }
     return 0;
 }
@@ -119,6 +127,8 @@ int main (int argc, char** argv){
     trap_ctx_t *ctx_export = NULL;
     int ret = 2;
     int verbose = 0;
+    void *data_alert = NULL;
+    void **data_export = NULL;
 
     uint64_t *ur_id = 0;
     double *ur_time = 0;  
@@ -194,7 +204,7 @@ int main (int argc, char** argv){
     }
     //output interface control settings
     if (trap_ctx_ifcctl(ctx, TRAPIFC_OUTPUT,0,TRAPCTL_SETTIMEOUT, TRAP_WAIT) != TRAP_E_OK){
-        cerr << "ERROR in output interface initialization" << endl;
+        cerr << "ERROR in alert output interface initialization" << endl;
         exit_value=2;
         goto cleanup;
     }
@@ -202,12 +212,14 @@ int main (int argc, char** argv){
     in_template = ur_ctx_create_input_template(ctx, 0, NULL, NULL);
     if (in_template == NULL) {
         cerr <<  "ERROR: unirec input template create fail" << endl;
+        exit_value=2;
         goto cleanup;
     }
-    //create empty alert template
-    alert_template = ur_ctx_create_output_template(ctx, 0, NULL, NULL);
+    //create alert template
+    alert_template = ur_ctx_create_output_template(ctx, 0, "ID,TIME", NULL);
     if (alert_template == NULL) {
         cerr <<  "ERROR: unirec alert template create fail" << endl;
+        exit_value=2;
         goto cleanup;
     }
     
@@ -215,11 +227,19 @@ int main (int argc, char** argv){
     //trap_ctx_set_required_fmt(ctx, 0, TRAP_FMT_UNIREC, NULL);
 
     //initialize export output interfaces
-    ret = setExportInterfaces(series_meta_data, utmpl_export_template, ctx_export);
+    ret = setExportInterfaces(series_meta_data, utmpl_export_template, ctx_export, data_export);
     if (ret > 1){
         exit_value=2;
         goto cleanup;
     }
+
+    data_alert = ur_create_record(alert_template, UR_MAX_SIZE);
+        if ( data_alert == NULL ) { 
+            cout << "ERROR: Data are not prepared for alert template" << endl;
+            exit_value=3;
+            goto cleanup;
+        }
+
 
     if (verbose >= 0) {
         cout << "Initialization done" << endl;

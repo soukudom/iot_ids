@@ -305,7 +305,20 @@ int Analyzer::getIndex(string name){
     }
 }
 
-void Analyzer::dataLimitCheck(map<string, map<string, vector<string> > >::iterator &meta_it, string ur_field, uint64_t *ur_id, double *ur_time ,double *ur_data){
+void Analyzer::addAlert(string & profile_name, string alert_message, map<string, vector<string> > & alert_str){
+    //find key
+    auto alert_it = alert_str.find(profile_name);
+    if (alert_it != alert_str.end()){
+        alert_it->second.push_back(alert_message);
+    }
+    else {
+        vector<string> tmp;
+        tmp.push_back(alert_message);
+        alert_str.insert(pair<string, vector<string> >(profile_name,tmp));
+    }
+}
+
+void Analyzer::dataLimitCheck(map<string, map<string, vector<string> > >::iterator &meta_it, string ur_field, uint64_t *ur_id, double *ur_time ,double *ur_data, map<string,vector<string> > &alert_str){
 
     for (auto profile_values: meta_it->second["profile"]){
         //test if soft limits are set
@@ -313,34 +326,34 @@ void Analyzer::dataLimitCheck(map<string, map<string, vector<string> > >::iterat
         if (meta_it->second[profile_values][SOFT_MIN] != "-"){
         
             //soft limit test 
+            //soft limit min
             if (stod(meta_it->second["metaData"][getIndex(profile_values)],nullptr)  < stod(meta_it->second[profile_values][SOFT_MIN],nullptr) ){
-                cout << "ERROR: soft min " << profile_values << endl;
-                //add counter
+                //add counter or create alert message if the counter is above soft period 
                 if ( stoi (meta_it->second[profile_values][S_MIN_LIMIT],nullptr) > stod(meta_it->second[profile_values][SOFT_PERIOD]) ){
-                    cout << "ALERT: soft period is over" << endl;
+                    cout << "ALERT: Lower soft limit" << endl;
+                    addAlert(profile_values, "Lower soft limit", alert_str);
                 }
                 else{
                     meta_it->second[profile_values][S_MIN_LIMIT] = to_string(stoi (meta_it->second[profile_values][S_MIN_LIMIT],nullptr) + 1);
                 }
             }
             else {
-                cout << "OK: reset back soft limit for " << profile_values << endl;
                 //reset counter
                 meta_it->second[profile_values][S_MIN_LIMIT] = "0";
             }
 
+            //soft limit max
             if (stod(meta_it->second["metaData"][getIndex(profile_values)],nullptr)  > stod(meta_it->second[profile_values][SOFT_MAX],nullptr) ){
-                cout << "ERROR: soft max " << profile_values << endl;
                 //add counter
                 if ( stoi (meta_it->second[profile_values][S_MAX_LIMIT],nullptr) > stod(meta_it->second[profile_values][SOFT_PERIOD]) ){
-                    cout << "ALERT: soft period is over" << endl;
+                    cout <<  "ALERT: Higher soft limit" << endl;
+                    addAlert(profile_values, "Higher soft limit", alert_str);
                 }
                 else{
                     meta_it->second[profile_values][S_MAX_LIMIT] = to_string(stoi (meta_it->second[profile_values][S_MAX_LIMIT],nullptr) + 1);
                 }
             }
             else {
-                cout << "OK: reset back soft max for " << profile_values << endl;
                 //reset counter
                 meta_it->second[profile_values][S_MAX_LIMIT] = "0";
             }
@@ -349,25 +362,21 @@ void Analyzer::dataLimitCheck(map<string, map<string, vector<string> > >::iterat
         //hard min, max limits are dependent -> test for hard min is ok
         else if (meta_it->second[profile_values][HARD_MIN] != "-"){
             //hard limit test
+            //hard limit min
             if (stod(meta_it->second["metaData"][getIndex(profile_values)],nullptr)  < stod(meta_it->second[profile_values][HARD_MIN],nullptr) ){
-                cout << "ERROR: hard min" << endl;
-                //return error immediately
+                cout << "ALERT: Lower hard limit" << endl;;
+                addAlert(profile_values, "Lower hard limit", alert_str);
             }
-            else {
-                cout << "OK: hard min " << endl;
-            }
+            //hard limit max
             if (stod(meta_it->second["metaData"][getIndex(profile_values)],nullptr)  > stod(meta_it->second[profile_values][HARD_MAX],nullptr) ){
-                cout << "ERROR: hard max" << endl;
-                //return error immediately
-            }
-            else {
-                cout << "OK: hard max " << endl;
+                cout  << "ALERT: Higher hard limit" << endl;
+                addAlert(profile_values, "Higher hard limit", alert_str);
             }
         }
     }
 }
 
-void Analyzer::dataChangeCheck(map<int,vector<double> >::iterator &sensor_it ,map<string, map<string, vector<string> > >::iterator &meta_it, string ur_field, uint64_t *ur_id, double *ur_time ,double *ur_data){
+void Analyzer::dataChangeCheck(map<int,vector<double> >::iterator &sensor_it ,map<string, map<string, vector<string> > >::iterator &meta_it, string ur_field, uint64_t *ur_id, double *ur_time ,double *ur_data, map<string,vector<string> > &alert_str){
     double alert_coef = 0;
     double new_value = 0;
     
@@ -386,33 +395,43 @@ void Analyzer::dataChangeCheck(map<int,vector<double> >::iterator &sensor_it ,ma
             //test grow limits
             if (alert_coef > stod(meta_it->second[profile_values][GROW_UP],nullptr)){
                 cout << "ALERT: GROW UP" << endl;
+                addAlert(profile_values, "Higher grow limit", alert_str);
+                
             }
             
             if (alert_coef < stod(meta_it->second[profile_values][GROW_DOWN],nullptr)){
                 cout << "ALERT: GROW DOWN" << endl;
+                addAlert(profile_values, "Lower grow limit", alert_str);
             }
         }
         
     }
 }
 
-void Analyzer::analyzeData(string ur_field, uint64_t *ur_id, double *ur_data, double *ur_time) {
+map<string,vector<string> > Analyzer::analyzeData(string ur_field, uint64_t *ur_id, double *ur_data, double *ur_time) {
     map<string, map<string, vector<string> > >::iterator meta_it;
     map<int, vector<double> >::iterator sensor_it;
+    map<string, vector<string> > alert_str;
+    
     //find proper iterators
     meta_it = series_meta_data.find(ur_field);
     sensor_it = control[ur_field].find(*ur_id);
     //*check conditions*//
     //soft,hard limit check
-    dataLimitCheck(meta_it, ur_field, ur_id, ur_time ,ur_data);
+    dataLimitCheck(meta_it, ur_field, ur_id, ur_time ,ur_data, alert_str);
     //grow check
-    dataChangeCheck(sensor_it, meta_it, ur_field, ur_id, ur_time, ur_data);
+    dataChangeCheck(sensor_it, meta_it, ur_field, ur_id, ur_time, ur_data, alert_str);
 
     //push new data and do calculation
     pushData(ur_data, meta_it, sensor_it, "metaData");
     modifyMetaData(ur_field,ur_id,meta_it, sensor_it, "metaData");
 
     //do action - return result 
+    return alert_str;
+
+}
+
+void Analyzer::sentAlert(map<string, vector<string> > &alert_str, trap_ctx_t *ctx){
 
 }
 
@@ -435,6 +454,7 @@ void Analyzer::processSeries(string ur_field, uint64_t *ur_id, double *ur_time, 
     if (init_state == 0){ 
         //analyze data series
         analyzeData(ur_field, ur_id, ur_data, ur_time);
+        
     }
 
     /*
