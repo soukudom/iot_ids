@@ -5,6 +5,9 @@
 #include <libtrap/trap.h>
 #include <unirec/unirec.h>
 #include "fields.h"
+#include <thread>
+#include <unistd.h>
+#include <ctime>
 
 
 using namespace std;
@@ -15,10 +18,19 @@ public:
     Analyzer();
     Analyzer(map<string, map<string, vector<string> > > meta_data);
     virtual ~Analyzer();
-    void processSeries(string ur_field, uint64_t *ur_id, double *ur_time, double *ur_data, trap_ctx_t *alert_ift, trap_ctx_t *data_export_ifc);
+    void processSeries(string ur_field, uint64_t *ur_id, double *ur_time, double *ur_data, trap_ctx_t *alert_ifc, trap_ctx_t *data_export_ifc, ur_template_t *alert_template, void *data_alert);
 
 private:
     /**atributes**/
+    trap_ctx_t *alert_ifc;
+    ur_template_t *alert_template;
+    void *data_alert;
+
+    trap_ctx_t *data_export_ifc;
+    ur_template_t **export_template;
+    void **data_export;
+    map<int,string> ur_export_fields;
+
     map<string, map<string, vector<string> > > series_meta_data;
     map<string, map<int, vector<double> > > control;
 
@@ -28,18 +40,18 @@ private:
 
     /**internal methods**/
     //initialize data series structures
-    int initSeries(string &ur_field, uint64_t *ur_id, double *ur_data);
+    int initSeries(string &ur_field, uint64_t *ur_id, double *ur_data, double *ur_time);
     //analyze data series data
     map<string,vector<string> > analyzeData(string ur_field, uint64_t *ur_id, double *ur_data, double *ur_time);
     //set reference profile values
     void modifyMetaData(string &ur_field, uint64_t *ur_id, map<string, map<string, vector<string> > >::iterator &meta_it, map<int, vector<double> >::iterator &sensor_it, string meta_id);
     //push data to the control structure
-    double pushData(double *ur_data, map<string, map<string, vector<string> > >::iterator &meta_it, map<int, vector<double> >::iterator &sensor_it, string meta_id);
+    double pushData(double *ur_time, double *ur_data, map<string, map<string, vector<string> > >::iterator &meta_it, map<int, vector<double> >::iterator &sensor_it, string meta_id);
     //get field index for profile name
     int getIndex(string name);
     //add alert to the alert structure
     void addAlert(string &profile_name, string alert_message, map<string, vector<string> > &alert);
-    void sentAlert(map<string, vector<string> > &alert_str, trap_ctx_t *ctx, string &ur_field, uint64_t *ur_id, double *ur_time);
+    void sentAlert(map<string, vector<string> > &alert_str, trap_ctx_t *ctx, string &ur_field, uint64_t *ur_id, double *ur_time, ur_template_t *alert_template, void *data_alert);
 
 
     /**profile determination methods**/
@@ -55,5 +67,11 @@ private:
     /**alert detection methods**/
     void dataLimitCheck(map<string, map<string, vector<string> > >::iterator &meta_it, string ur_field, uint64_t *ur_id, double *ur_time ,double *ur_data, map<string,vector<string> > & alert_str);
     void dataChangeCheck(map<int,vector<double> >::iterator &sensor_it, map<string, map<string, vector<string> > >::iterator &meta_it, string ur_field, uint64_t *ur_id, double *ur_time ,double *ur_data, map<string,vector<string> > & alert_str);
+
+
+    /** thead method **/
+    void periodicCheck(int period, string ur_field);
+    void periodicExport(int period, string ur_field);
+    void runThreads(string &ur_field);
     
 };

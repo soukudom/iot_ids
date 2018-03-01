@@ -4,6 +4,8 @@
 #include <algorithm>
 #include <getopt.h>
 #include <signal.h>
+#include <thread>
+#include <unistd.h>
 
 
 #include <libtrap/trap.h>
@@ -20,6 +22,16 @@ trap_module_info_t *module_info = NULL;
 #define MODULE_BASIC_INFO(BASIC) \
   BASIC("data-series-detector", "This module detect anomalies in data series", 1, 1)
 #define MODULE_PARAMS(PARAM)
+
+/*
+void periodicCheck(){
+    while(true){
+        cout << "start sleeping 3 secs" << endl;
+        sleep(3);
+        cout << "end sleeping 3 secs" << endl;
+    }   
+}
+*/
 
 //test print function 
 //auto specifier in function parameter is available from c++14
@@ -38,7 +50,7 @@ void printSeries( map<string,map<string, vector<string> > >& series_meta_data){
 }
 
 //prepare output interfaces for periodic export
-int setExportInterfaces(map<string, map<string, vector<string> > > &series_meta_data,  ur_template_t ** utmpl_export_template, trap_ctx_t *ctx_export, void **data_export){
+int setExportInterfaces(map<string, map<string, vector<string> > > &series_meta_data,  ur_template_t ** export_template, trap_ctx_t *ctx_export, void **data_export){
     string interface_spec; //name of output interface specification
     map<int,string> ur_export_fields; //map with unirec values for each interface
     int flag = 0; //flag for definig output interface name
@@ -80,9 +92,9 @@ int setExportInterfaces(map<string, map<string, vector<string> > > &series_meta_
     interface_spec.pop_back();
 
     //allocate memory for output export interface
-    utmpl_export_template = (ur_template_t **)calloc(number_of_keys,sizeof(*utmpl_export_template));
+    export_template = (ur_template_t **)calloc(number_of_keys,sizeof(*export_template));
     data_export = (void **) calloc(number_of_keys,sizeof(void *));
-    if (utmpl_export_template == NULL){
+    if (export_template == NULL){
         cerr << "ERROR: Export output template allocation error" << endl;
         return 2;
     }
@@ -101,13 +113,13 @@ int setExportInterfaces(map<string, map<string, vector<string> > > &series_meta_
             return 4;
         }
 
-        utmpl_export_template[i] = ur_ctx_create_output_template(ctx_export,i,ur_export_fields[i].c_str(),NULL);
-        if ( utmpl_export_template[i] == NULL ) {
+        export_template[i] = ur_ctx_create_output_template(ctx_export,i,ur_export_fields[i].c_str(),NULL);
+        if ( export_template[i] == NULL ) {
             cerr << "ERROR: Unable to define unirec fields" << endl;
             return 5;
         }
 
-        data_export[i] = ur_create_record(utmpl_export_template[i], 0);
+        data_export[i] = ur_create_record(export_template[i], 0);
         if ( data_export[i] == NULL ) { 
             cout << "Error: Data are not prepared for the export template" << endl;
             return 6;
@@ -120,9 +132,9 @@ int setExportInterfaces(map<string, map<string, vector<string> > > &series_meta_
 int main (int argc, char** argv){
     
     int exit_value = 0; //detector return value
-    static ur_template_t * in_template = NULL; //UniRec input template
-    static ur_template_t * alert_template = NULL; //UniRec output template
-    ur_template_t **utmpl_export_template;
+    ur_template_t * in_template = NULL; //UniRec input template
+    ur_template_t * alert_template = NULL; //UniRec output template
+    ur_template_t **export_template;
     trap_ctx_t *ctx = NULL;
     trap_ctx_t *ctx_export = NULL;
     int ret = 2;
@@ -227,7 +239,7 @@ int main (int argc, char** argv){
     //trap_ctx_set_required_fmt(ctx, 0, TRAP_FMT_UNIREC, NULL);
 
     //initialize export output interfaces
-    ret = setExportInterfaces(series_meta_data, utmpl_export_template, ctx_export, data_export);
+    ret = setExportInterfaces(series_meta_data, export_template, ctx_export, data_export);
     if (ret > 1){
         exit_value=2;
         goto cleanup;
@@ -266,9 +278,14 @@ int main (int argc, char** argv){
                 continue;
             }
             ur_data = (double*) ur_get_ptr_by_id(in_template, data_nemea_input,id);
-            series_a.processSeries(ur_get_name(id), ur_id, ur_time, ur_data, ctx, ctx_export);
+            series_a.processSeries(ur_get_name(id), ur_id, ur_time, ur_data, ctx, ctx_export, alert_template, data_alert);
+  //          thread t1(periodicCheck);
+            
+
         }
     }
+
+//    t1.join();
 
 cleanup:
     //cleaning
