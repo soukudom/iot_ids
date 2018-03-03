@@ -50,9 +50,9 @@ void printSeries( map<string,map<string, vector<string> > >& series_meta_data){
 }
 
 //prepare output interfaces for periodic export
-int setExportInterfaces(map<string, map<string, vector<string> > > &series_meta_data,  ur_template_t ** export_template, trap_ctx_t *ctx_export, void **data_export){
+int initExportInterfaces(map<string, map<string, vector<string> > > &series_meta_data,  ur_template_t ** export_template, trap_ctx_t *ctx_export, void **data_export, map<int,pair<string, string> > &ur_export_fields){
     string interface_spec; //name of output interface specification
-    map<int,string> ur_export_fields; //map with unirec values for each interface
+    //map<int,string> ur_export_fields; //map with unirec values for each interface
     int flag = 0; //flag for definig output interface name
     string field_name; //tmp value for ur_values
     int number_of_keys = 0; //counter for number of export values
@@ -68,7 +68,7 @@ int setExportInterfaces(map<string, map<string, vector<string> > > &series_meta_
                 for (auto elem: element.second){
                     //skip empty values
                     if(elem == "-"){
-                        continue;
+                        break;
                     }
                     //update tmp variables
                     field_name += elem;
@@ -78,8 +78,12 @@ int setExportInterfaces(map<string, map<string, vector<string> > > &series_meta_
                         flag = 1;
                     }
                 }   
-                //insert tmp variables to the map structure
-                ur_export_fields.insert(pair<int,string>(number_of_keys-1,field_name));
+                if (flag == 1){
+                    //insert tmp variables to the map structure
+                    cout << "skip" << endl;
+                    pair <string, string > tmp(field_name,main_key.first); 
+                    ur_export_fields.insert(pair<int,pair<string, string> >(number_of_keys-1, tmp));
+                }
             }
         }
     }
@@ -113,7 +117,7 @@ int setExportInterfaces(map<string, map<string, vector<string> > > &series_meta_
             return 4;
         }
 
-        export_template[i] = ur_ctx_create_output_template(ctx_export,i,ur_export_fields[i].c_str(),NULL);
+        export_template[i] = ur_ctx_create_output_template(ctx_export,i,ur_export_fields[i].first.c_str(),NULL);
         if ( export_template[i] == NULL ) {
             cerr << "ERROR: Unable to define unirec fields" << endl;
             return 5;
@@ -141,18 +145,20 @@ int main (int argc, char** argv){
     int verbose = 0;
     void *data_alert = NULL;
     void **data_export = NULL;
+    map<int,pair<string, string> > ur_export_fields; //map with unirec values for each interface
 
     uint64_t *ur_id = 0;
     double *ur_time = 0;  
     double *ur_data = 0;
     uint8_t data_fmt = TRAP_FMT_UNIREC;
 
+
     //parse created configuration file
     ConfigParser cp("config.txt");
     auto series_meta_data = cp.getSeries();
 
+    //create analyze object
     Analyzer series_a (series_meta_data);
-
 
     //printSeries(series_meta_data);
  
@@ -238,8 +244,13 @@ int main (int argc, char** argv){
     //set required incoming format
     //trap_ctx_set_required_fmt(ctx, 0, TRAP_FMT_UNIREC, NULL);
 
+    //parse created configuration file
+    //ConfigParser cp("config.txt");
+    //auto series_meta_data = cp.getSeries();
+
+
     //initialize export output interfaces
-    ret = setExportInterfaces(series_meta_data, export_template, ctx_export, data_export);
+    ret = initExportInterfaces(series_meta_data, export_template, ctx_export, data_export, ur_export_fields);
     if (ret > 1){
         exit_value=2;
         goto cleanup;
@@ -252,10 +263,13 @@ int main (int argc, char** argv){
             goto cleanup;
         }
 
-
     if (verbose >= 0) {
         cout << "Initialization done" << endl;
     }
+
+    //set initialized values
+    series_a.setAlertInterface(ctx,alert_template,data_alert);
+    series_a.setExportInterface(ctx_export, export_template, data_export, ur_export_fields);
 
     //main loop
     while (true){
@@ -278,7 +292,8 @@ int main (int argc, char** argv){
                 continue;
             }
             ur_data = (double*) ur_get_ptr_by_id(in_template, data_nemea_input,id);
-            series_a.processSeries(ur_get_name(id), ur_id, ur_time, ur_data, ctx, ctx_export, alert_template, data_alert);
+            //series_a.processSeries(ur_get_name(id), ur_id, ur_time, ur_data, ctx, ctx_export, alert_template, data_alert);
+            series_a.processSeries(ur_get_name(id), ur_id, ur_time, ur_data);
   //          thread t1(periodicCheck);
             
 

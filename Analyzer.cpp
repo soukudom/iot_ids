@@ -10,6 +10,21 @@ Analyzer::Analyzer(map<string, map<string, vector<string> > > meta_data): series
 //destructor
 Analyzer::~Analyzer() = default;
 
+//setters
+void Analyzer::setAlertInterface(trap_ctx_t *alert_ifc, ur_template_t *alert_template, void *data_alert){
+    this->alert_ifc = alert_ifc;
+    this->alert_template = alert_template;
+    this->data_alert = data_alert;
+}
+
+void Analyzer::setExportInterface(trap_ctx_t *data_export_ifc, ur_template_t **export_template, void **data_export, map<int, pair<string, string> > ur_export_fields){
+    
+    this->data_export_ifc = data_export_ifc;
+    this->export_template = export_template;
+    this->data_export = data_export;
+    this->ur_export_fields = ur_export_fields;
+}
+
 /* 
  * BEGIN CALCALULATION METHODS
  */
@@ -244,6 +259,7 @@ int Analyzer::initSeries(string &ur_field, uint64_t *ur_id, double *ur_data, dou
             sensor_it = control[ur_field].find(*ur_id);
             //modify profile values
             modifyMetaData(ur_field,ur_id,meta_it, sensor_it, "metaProfile");
+            meta_it->second["metaProfile"][ID] = to_string(*ur_id);
             return 2;
         }
     }
@@ -272,7 +288,7 @@ void Analyzer::printSeries(string &ur_field){
             cout << elem << ", ";
         }
         cout << endl;
-        cout << "   AVERAGE, VARIANCE, MEDIAN, CUM_AVERAGE, SX, SX2, PREV_VALUE, NEW_VALUE, LAST_TIME, ROTATE" << endl;
+        cout << "   AVERAGE, VARIANCE, MEDIAN, CUM_AVERAGE, SX, SX2, PREV_VALUE, NEW_VALUE, LAST_TIME, ROTATE, CHECKED_FLAG, ID" << endl;
         cout << "   ";
         for (auto meta: series_meta_data[ur_field]["metaProfile"] ){
             cout.precision(1);
@@ -432,7 +448,8 @@ map<string,vector<string> > Analyzer::analyzeData(string ur_field, uint64_t *ur_
 
 }
 
-void Analyzer::sentAlert(map<string, vector<string> > &alert_str, trap_ctx_t *ctx, string &ur_field, uint64_t *ur_id, double *ur_time, ur_template_t *alert_template, void *data_alert){
+//void Analyzer::sentAlert(map<string, vector<string> > &alert_str, trap_ctx_t *ctx, string &ur_field, uint64_t *ur_id, double *ur_time, ur_template_t *alert_template, void *data_alert){
+void Analyzer::sentAlert(map<string, vector<string> > &alert_str, string &ur_field, uint64_t *ur_id, double *ur_time){
     if (alert_str.empty()){
         cout << "no alert" << endl;
         return;
@@ -443,8 +460,9 @@ void Analyzer::sentAlert(map<string, vector<string> > &alert_str, trap_ctx_t *ct
             cout << "sent: " << profile.first << ", " << elem << endl;
             ur_set(alert_template, data_alert, F_ID, *ur_id);
             ur_set(alert_template, data_alert, F_TIME, *ur_time);
-            trap_ctx_send(ctx, 0, data_alert, ur_rec_size(alert_template, data_alert));
-            //trap_ctx_send_flush(ctx,0);
+            //trap_ctx_send(ctx, 0, data_alert, ur_rec_size(alert_template, data_alert));
+            trap_ctx_send(alert_ifc, 0, data_alert, ur_rec_size(alert_template, data_alert));
+            //trap_ctx_send_flush(alert_ifc,0);
         }
         
     }
@@ -460,8 +478,13 @@ void Analyzer::periodicCheck(int period,  string ur_field){
         sleep(period);
         int result = std::time(nullptr);
         if (result - stoi(meta_it->second["metaData"][LAST_TIME]) > period ){
+            map<string,vector<string> > alert_str;
             //alert data hasn't bee received
             cout << "ALERT: data period" << endl;
+            addAlert(ur_field, "Periodic check", alert_str);
+            uint64_t ur_id = stoi(meta_it->second["metaProfile"][ID],nullptr);
+            double ur_time = stod(meta_it->second["metaData"][LAST_TIME],nullptr);
+            sentAlert(alert_str, ur_field, &ur_id, &ur_time);
         }
     }
 }
@@ -470,6 +493,26 @@ void Analyzer::periodicExport(int period, string ur_field){
 
     map<string, map<string, vector<string> > >::iterator meta_it;
     meta_it = series_meta_data.find(ur_field);
+    cout << "PERIODIC EXPORT " << ur_field << endl;
+    while (true){
+        sleep (period);
+        for (auto elem: ur_export_fields){
+            cout << "key: " << elem.first << " val: " << elem.second.first << ", " << elem.second.second << endl;
+            //ur_set
+            if (elem.second.first == "average"){
+                //ur_set(export_template[elem.first], data_export[elem.first], F_average, id_val);
+
+            }
+            //else if () {
+
+            //}
+            //trap_ctx_send
+            //trap_ctx_send(data_export_ifc, elem.first, data_export[elem.first], ur_rec_size(export_template[elem.first], data_export[elem.first]));
+            //trap_ctx_send_flush
+        }
+        
+    
+    }
 
     //sent defined data
 
@@ -495,7 +538,8 @@ void Analyzer::runThreads(string &ur_field){
 }
 
 //data series processing
-void Analyzer::processSeries(string ur_field, uint64_t *ur_id, double *ur_time, double *ur_data, trap_ctx_t *alert_ifc, trap_ctx_t *data_export_ifc, ur_template_t *alert_template, void *data_alert) {
+//void Analyzer::processSeries(string ur_field, uint64_t *ur_id, double *ur_time, double *ur_data, trap_ctx_t *alert_ifc, trap_ctx_t *data_export_ifc, ur_template_t *alert_template, void *data_alert) {
+void Analyzer::processSeries(string ur_field, uint64_t *ur_id, double *ur_time, double *ur_data) {
     int init_state = 0;
     //initialize data series
     /*return 
@@ -513,7 +557,8 @@ void Analyzer::processSeries(string ur_field, uint64_t *ur_id, double *ur_time, 
     if (init_state == 0){ 
         //analyze data series
         auto alert_str = analyzeData(ur_field, ur_id, ur_data, ur_time);
-        sentAlert(alert_str, alert_ifc, ur_field, ur_id, ur_time,alert_template, data_alert);
+        //sentAlert(alert_str, alert_ifc, ur_field, ur_id, ur_time,alert_template, data_alert);
+        sentAlert(alert_str, ur_field, ur_id, ur_time);
         runThreads(ur_field);
     }
 
