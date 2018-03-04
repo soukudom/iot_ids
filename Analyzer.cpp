@@ -500,23 +500,29 @@ void Analyzer::periodicExport(int period, string ur_field){
             cout << "key: " << elem.first << " val: " << elem.second.first << ", " << elem.second.second << endl;
             //ur_set
             if (elem.second.first == "average"){
-                //ur_set(export_template[elem.first], data_export[elem.first], F_average, id_val);
+                cout << "NOTE: ur set before" << endl;
+                //ur_set(export_template[elem.first], data_export[elem.first], F_average, stod(meta_it->second["metaData"][AVERAGE],nullptr));
+                ur_set(export_template[0], data_export[0], F_average, 5.0);
+                cout << "NOTE: ur set after" << endl;
 
             }
             //else if () {
 
             //}
             //trap_ctx_send
-            //trap_ctx_send(data_export_ifc, elem.first, data_export[elem.first], ur_rec_size(export_template[elem.first], data_export[elem.first]));
+    //        trap_ctx_send(data_export_ifc, elem.first, data_export[elem.first], ur_rec_size(export_template[elem.first], data_export[elem.first]));
             //trap_ctx_send_flush
         }
+
+/*
+    this->data_export_ifc = data_export_ifc;
+    this->export_template = export_template;
+    this->data_export = data_export;
+    this->ur_export_fields = ur_export_fields;
+*/
         
     
     }
-
-    //sent defined data
-
-
 }
 
 void Analyzer::runThreads(string &ur_field){

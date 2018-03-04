@@ -15,6 +15,11 @@
 #include "config.h"
 #include "Analyzer.h"
 
+/*
+    TODO
+    podpora vebose zprav
+*/
+
 using namespace std;
 
 trap_module_info_t *module_info = NULL;
@@ -50,7 +55,7 @@ void printSeries( map<string,map<string, vector<string> > >& series_meta_data){
 }
 
 //prepare output interfaces for periodic export
-int initExportInterfaces(map<string, map<string, vector<string> > > &series_meta_data,  ur_template_t ** export_template, trap_ctx_t *ctx_export, void **data_export, map<int,pair<string, string> > &ur_export_fields){
+int initExportInterfaces(map<string, map<string, vector<string> > > &series_meta_data,  ur_template_t *** export_template, trap_ctx_t *ctx_export, void ***data_export, map<int,pair<string, string> > &ur_export_fields){
     string interface_spec; //name of output interface specification
     //map<int,string> ur_export_fields; //map with unirec values for each interface
     int flag = 0; //flag for definig output interface name
@@ -80,13 +85,13 @@ int initExportInterfaces(map<string, map<string, vector<string> > > &series_meta
                 }   
                 if (flag == 1){
                     //insert tmp variables to the map structure
-                    cout << "skip" << endl;
                     pair <string, string > tmp(field_name,main_key.first); 
                     ur_export_fields.insert(pair<int,pair<string, string> >(number_of_keys-1, tmp));
                 }
             }
         }
     }
+
 
     //no export parameters were specified
     if (interface_spec.length() == 0){
@@ -95,13 +100,19 @@ int initExportInterfaces(map<string, map<string, vector<string> > > &series_meta
     //remove last comma
     interface_spec.pop_back();
 
+
     //allocate memory for output export interface
-    export_template = (ur_template_t **)calloc(number_of_keys,sizeof(*export_template));
-    data_export = (void **) calloc(number_of_keys,sizeof(void *));
+    *export_template = (ur_template_t **)calloc(number_of_keys,sizeof(*export_template));
+    *data_export = (void **) calloc(number_of_keys,sizeof(void *));
     if (export_template == NULL){
         cerr << "ERROR: Export output template allocation error" << endl;
         return 2;
     }
+    if (*data_export == NULL){
+        cerr << "ERROR: Export output data record allocation error" << endl;
+        return 2;
+    }
+    
 
     //interface initialization
     ctx_export = trap_ctx_init3("data-periodic-export", "Export data profile periodicaly",0,number_of_keys,interface_spec.c_str(),NULL);
@@ -110,6 +121,8 @@ int initExportInterfaces(map<string, map<string, vector<string> > > &series_meta
         return 3;
     }
 
+
+
     //interface control & create unirec template
     for (int i = 0; i < number_of_keys; i++ ){
         if ( trap_ctx_ifcctl(ctx_export, TRAPIFC_OUTPUT,i,TRAPCTL_SETTIMEOUT,TRAP_WAIT) != TRAP_E_OK ) {
@@ -117,19 +130,20 @@ int initExportInterfaces(map<string, map<string, vector<string> > > &series_meta
             return 4;
         }
 
-        export_template[i] = ur_ctx_create_output_template(ctx_export,i,ur_export_fields[i].first.c_str(),NULL);
-        if ( export_template[i] == NULL ) {
+        *(export_template)[i] = ur_ctx_create_output_template(ctx_export,i,ur_export_fields[i].first.c_str(),NULL);
+        if ( (*export_template)[i] == NULL ) {
             cerr << "ERROR: Unable to define unirec fields" << endl;
             return 5;
         }
 
-        data_export[i] = ur_create_record(export_template[i], 0);
-        if ( data_export[i] == NULL ) { 
+        (*data_export)[i] = ur_create_record((*export_template)[i], 0);
+        if ( (*data_export)[i] == NULL ) { 
             cout << "Error: Data are not prepared for the export template" << endl;
             return 6;
         }
 
     }
+
     return 0;
 }
 
@@ -138,7 +152,7 @@ int main (int argc, char** argv){
     int exit_value = 0; //detector return value
     ur_template_t * in_template = NULL; //UniRec input template
     ur_template_t * alert_template = NULL; //UniRec output template
-    ur_template_t **export_template;
+    ur_template_t **export_template = NULL;
     trap_ctx_t *ctx = NULL;
     trap_ctx_t *ctx_export = NULL;
     int ret = 2;
@@ -250,7 +264,7 @@ int main (int argc, char** argv){
 
 
     //initialize export output interfaces
-    ret = initExportInterfaces(series_meta_data, export_template, ctx_export, data_export, ur_export_fields);
+    ret = initExportInterfaces(series_meta_data, &export_template, ctx_export, &data_export, ur_export_fields);
     if (ret > 1){
         exit_value=2;
         goto cleanup;
@@ -267,9 +281,35 @@ int main (int argc, char** argv){
         cout << "Initialization done" << endl;
     }
 
+
+    //test message
+        if (data_export == NULL){
+            cout << "data export error" << endl;
+
+        }
+        if (data_export[0] == NULL){
+            cout << "data export [0] error" << endl;
+
+        }
+        if (export_template == NULL){
+            cout << "export template error" << endl;
+            
+        }
+        if (export_template[0] == NULL){
+            cout << "export template [0 ]error" << endl;
+            
+        }
+        
+    cout << "sent" << endl;
+    ur_set(export_template[0], data_export[0], F_average, 3.0); 
+    //trap_ctx_send(ctx_export, 0, data_export[0], ur_rec_size(export_template[0], data_export[0]));
+
     //set initialized values
     series_a.setAlertInterface(ctx,alert_template,data_alert);
     series_a.setExportInterface(ctx_export, export_template, data_export, ur_export_fields);
+
+
+
 
     //main loop
     while (true){
