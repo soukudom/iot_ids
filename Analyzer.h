@@ -21,7 +21,7 @@ public:
     //void processSeries(string ur_field, uint64_t *ur_id, double *ur_time, double *ur_data, trap_ctx_t *alert_ifc, trap_ctx_t *data_export_ifc, ur_template_t *alert_template, void *data_alert);
     void processSeries(string ur_field, uint64_t *ur_id, double *ur_time, double *ur_data);
     void setAlertInterface(trap_ctx_t *alert_ifc, ur_template_t *alert_template, void *data_alert);
-    void setExportInterface(trap_ctx_t *data_export_ifc, ur_template_t **export_template, void **data_export, map<int, pair<string, string> > ur_export_fields);
+    void setExportInterface(trap_ctx_t *data_export_ifc, ur_template_t **export_template, void **data_export, map<int, pair<string, vector<string> > > ur_export_fields);
 
 
 private:
@@ -33,7 +33,7 @@ private:
     trap_ctx_t *data_export_ifc;
     ur_template_t **export_template;
     void **data_export;
-    map<int,pair<string, string> >ur_export_fields;
+    map<int,pair<string, vector<string> > >ur_export_fields;
 
     map<string, map<string, vector<string> > > series_meta_data;
     map<string, map<int, vector<double> > > control;

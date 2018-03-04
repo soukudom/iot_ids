@@ -17,7 +17,7 @@ void Analyzer::setAlertInterface(trap_ctx_t *alert_ifc, ur_template_t *alert_tem
     this->data_alert = data_alert;
 }
 
-void Analyzer::setExportInterface(trap_ctx_t *data_export_ifc, ur_template_t **export_template, void **data_export, map<int, pair<string, string> > ur_export_fields){
+void Analyzer::setExportInterface(trap_ctx_t *data_export_ifc, ur_template_t **export_template, void **data_export, map<int, pair<string, vector<string> > > ur_export_fields){
     
     this->data_export_ifc = data_export_ifc;
     this->export_template = export_template;
@@ -497,31 +497,33 @@ void Analyzer::periodicExport(int period, string ur_field){
     while (true){
         sleep (period);
         for (auto elem: ur_export_fields){
-            cout << "key: " << elem.first << " val: " << elem.second.first << ", " << elem.second.second << endl;
-            //ur_set
-            if (elem.second.first == "average"){
-                cout << "NOTE: ur set before" << endl;
-                //ur_set(export_template[elem.first], data_export[elem.first], F_average, stod(meta_it->second["metaData"][AVERAGE],nullptr));
-                ur_set(export_template[0], data_export[0], F_average, 5.0);
-                cout << "NOTE: ur set after" << endl;
+            for (auto field: elem.second.second){
+                //set unirec record 
+                if (field == "average"){
+                    cout << "ADD AVERAGE " << stod(meta_it->second["metaData"][AVERAGE],nullptr) << endl;
+                    ur_set(export_template[elem.first], data_export[elem.first], F_average, stod(meta_it->second["metaData"][AVERAGE],nullptr));
+                }
+                else if (field == "variance") {
+                    cout << "ADD VARIANCE: " << stod(meta_it->second["metaData"][VARIANCE],nullptr) <<  endl;
+                    ur_set(export_template[elem.first], data_export[elem.first], F_variance, stod(meta_it->second["metaData"][VARIANCE],nullptr));
 
+                }
+                else if (field == "median"){
+                    cout << "ADD MEDIAN" << endl;
+                    ur_set(export_template[elem.first], data_export[elem.first], F_median, stod(meta_it->second["metaData"][MEDIAN],nullptr));
+
+                }
+                else if (field == "cum_average"){
+                    cout << "ADD CUM_AVERAGE " << stod(meta_it->second["metaData"][CUM_AVERAGE],nullptr) << endl;
+                    ur_set(export_template[elem.first], data_export[elem.first], F_cum_average, stod(meta_it->second["metaData"][CUM_AVERAGE],nullptr));
+
+                }
             }
-            //else if () {
-
-            //}
-            //trap_ctx_send
-    //        trap_ctx_send(data_export_ifc, elem.first, data_export[elem.first], ur_rec_size(export_template[elem.first], data_export[elem.first]));
+            
+            //send data for periodic export
+            trap_ctx_send(data_export_ifc, elem.first, data_export[elem.first], ur_rec_size(export_template[elem.first], data_export[elem.first]));
             //trap_ctx_send_flush
         }
-
-/*
-    this->data_export_ifc = data_export_ifc;
-    this->export_template = export_template;
-    this->data_export = data_export;
-    this->ur_export_fields = ur_export_fields;
-*/
-        
-    
     }
 }
 
