@@ -1,44 +1,52 @@
+/**
+ * \file ConfigParser.cpp
+ * \brief Parse file with configuration of unirec field.
+ * \author Dominik Soukup <soukudom@fit.cvut.cz>
+ * \date 2018
+**/
+
 #include "ConfigParser.h"
 
 using namespace std;
 
-//constructor
+// Constructor
 ConfigParser::ConfigParser(string configFile) : config(configFile){
     if (config.is_open()){
-        string line;
-        string key;
-        string value;
-        string multi_key;
-        string multi_value;
-        string simple_value;
+        // Local tmp store variables
+        string line;         // One line from configuration file
+        string key;          // Name of unirec field
+        string value;        // Config params for one key 
+        string multi_key;    // Name of composite value  
+        string multi_value;  // Config params for one composite key
+        string simple_value; // One item of multi value record
 
         while(getline(config,line)){
-            //erase whitespace
+            // Erase whitespace
             line.erase(remove_if(line.begin(), line.end(), ::isspace), line.end());
-            //erase comments and empty lines
-            if( line[0]=='#' || line.empty()) continue;
-            //parse ur_field
+            // Erase comments and empty lines
+            if(line[0] == '#' || line.empty()) continue;
+            // Parse ur_field
             auto delimiter = line.find(":");
             key = line.substr(0, delimiter);
             line.erase(0,delimiter+1);
 
-            //insert ur_field to the map
+            // Insert ur_field to the map
             while (delimiter != string::npos){
                 auto last_delimiter = delimiter;
-                //parse next config field
+                // Parse next config field
                 delimiter = line.find(";");
                 value = line.substr(0, delimiter);
                 size_t multi_item = value.find("(");
-                //composite key has been found
+                // Composite key has been found -> name(param1, param2, ...,)
                 if (multi_item != string::npos){
-                    //parse and save to the proper index
+                    // Parse and save to the proper index
                     multi_key = value.substr(0, multi_item);
                     value.erase(0,multi_item+1);
                     size_t multi_item = value.find(")");
                     value = value.substr(0, multi_item); 
-                    //parse values
+                    // Parse values for composite key
                     size_t multi_value = value.find(",");
-                    //multi key (more than one item) -> value parsing needed
+                    // Multi key (more than one item) -> value parsing needed
                     if (multi_value != string::npos){
                         while (multi_value != string::npos){
                             simple_value = value.substr(0,multi_value);
@@ -46,40 +54,34 @@ ConfigParser::ConfigParser(string configFile) : config(configFile){
                             value.erase(0,multi_value+1);
                             multi_value = value.find(",");
                         }
-                    }
-                    //simple value -> save directly
-                    else {
+                    // Simple value -> save directly
+                    } else {
                         series[key][multi_key].push_back(value);
                         value.erase(0,multi_item+1);
                     }   
                     line.erase(0,delimiter+1);
-                }
-                //general key has been found
-                else {
-                    //cout << "general value: " << value << endl; 
+                // General key has been found -> just value without brackets
+                } else {
                     series[key]["general"].push_back(value);
                     line.erase(0,delimiter+1);
                 }
             }
-            //insert dynamic values
+            // Insert dynamic initialization values
             for (int i=0; i < DYNAMIC; i++){
                 series[key]["metaProfile"].push_back(to_string(0));
                 series[key]["metaData"].push_back("x");
             }
         }
         config.close();
-    }
-    else{
+    } else {
         cerr << "ERROR: Unable to open the configuration fle " << configFile << endl;
     }
 } 
 
-//destructor
-ConfigParser::~ConfigParser(){
-    config.close();
-}
+// Destructor
+ConfigParser::~ConfigParser() = default;
 
-//getter
+// Getter function
 map<string, map<string, vector<string> > > ConfigParser::getSeries(){
     return series;
 }
