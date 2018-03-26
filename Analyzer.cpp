@@ -390,18 +390,29 @@ void Analyzer::dataLimitCheck(map<string, map<string, vector<string> > >::iterat
 void Analyzer::dataChangeCheck(map<int,vector<double> >::iterator &sensor_it ,map<string, map<string, vector<string> > >::iterator &meta_it, string ur_field, uint64_t *ur_id, double *ur_time ,double *ur_data, map<string,vector<string> > &alert_str){
     double alert_coef = 0;
     double new_value = 0;
+    double profile_value = 0;
     
     for (auto profile_values: meta_it->second["profile"]){
-        new_value = sensor_it->second.back();
+        //new_value = sensor_it->second.back();
+        new_value = stod(meta_it->second["metaData"][getIndex(profile_values)],nullptr);
+        profile_value = stod(meta_it->second["metaProfile"][getIndex(profile_values)],nullptr);
+        // Protection against zero profile values
+        if (profile_value == 0){
+            profile_value = 1;
+        } 
+    
         // Test if grow limits are set
         // Grow up,down limits are dependent -> test for grow up is ok
+        cout << "grow test: " << profile_values << " " << new_value << " / " << profile_value << endl; 
         if (meta_it->second[profile_values][GROW_UP] != "-"){
             // Divide by zero protection
             if (stod(meta_it->second["metaData"][getIndex(profile_values)],nullptr) == 0 ){
                 alert_coef = 1; //-> mean no data grow change 
             } else {
-                alert_coef = new_value/stod(meta_it->second["metaData"][getIndex(profile_values)],nullptr);
+               // alert_coef = new_value/stod(meta_it->second["metaData"][getIndex(profile_values)],nullptr);
+                alert_coef = new_value / profile_value;
             }
+            cout << "comparation: " << alert_coef << " < " << stod(meta_it->second[profile_values][GROW_UP],nullptr) << endl;
             // Test grow limits
             if (alert_coef > stod(meta_it->second[profile_values][GROW_UP],nullptr)){
                 cout << "ALERT: GROW UP" << endl;
