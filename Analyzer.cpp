@@ -1,25 +1,32 @@
+/**
+ * \file Analyzer.cpp
+ * \brief Analyze time series data based on configuration
+ * \author Dominik Soukup <soukudom@fit.cvut.cz>
+ * \date 2018
+**/
+
 #include "Analyzer.h"
 #include "ConfigParser.h"
 
-//constructor
- //default
+// Default constructor
 Analyzer::Analyzer() = default;
- //param
+
+// Param constructor
 Analyzer::Analyzer(map<string, map<string, vector<string> > > meta_data): series_meta_data(meta_data) {}
 
-//destructor
+// Default destructor
 Analyzer::~Analyzer() = default;
 
-//setters
+// Setters for trap interfaces
 void Analyzer::setAlertInterface(trap_ctx_t *alert_ifc, ur_template_t *alert_template, void *data_alert){
     this->alert_ifc = alert_ifc;
     this->alert_template = alert_template;
     this->data_alert = data_alert;
 }
 
-void Analyzer::setExportInterface(trap_ctx_t *data_export_ifc, ur_template_t **export_template, void **data_export, map<int, pair<string, vector<string> > > ur_export_fields){
+void Analyzer::setExportInterface(trap_ctx_t *export_ifc, ur_template_t **export_template, void **data_export, map<int, pair<string, vector<string> > > ur_export_fields){
     
-    this->data_export_ifc = data_export_ifc;
+    this->export_ifc = export_ifc;
     this->export_template = export_template;
     this->data_export = data_export;
     this->ur_export_fields = ur_export_fields;
@@ -29,7 +36,7 @@ void Analyzer::setExportInterface(trap_ctx_t *data_export_ifc, ur_template_t **e
  * BEGIN CALCALULATION METHODS
  */
 double Analyzer::getMedian(map<int,vector<double> >::iterator &sensor_it){
-    //basic non-moving median calculation
+    // Basic non-moving median calculation
     double median = 0;
     size_t size = sensor_it->second.size();
 
@@ -44,9 +51,9 @@ double Analyzer::getMedian(map<int,vector<double> >::iterator &sensor_it){
 }
 
 double Analyzer::getCumulativeAverage(map<int,vector<double> >::iterator &sensor_it, map<string,map<string, vector<string> > >::iterator &meta_it, string meta_id){
-    //alg source: https://en.wikipedia.org/wiki/Moving_average
+    // Alg source: https://en.wikipedia.org/wiki/Moving_average
     double new_value = sensor_it->second.back();
-    //first value exception
+    // First value exception
     if (sensor_it->second.size() == 1){
         return new_value;
     }
@@ -56,7 +63,7 @@ double Analyzer::getCumulativeAverage(map<int,vector<double> >::iterator &sensor
 }
 
 pair<double, double> Analyzer::getAverageAndVariance(string &ur_field, uint64_t *ur_id, map<string,map<string, vector<string> > >::iterator &meta_it, map<int, vector<double> >::iterator &sensor_it, string meta_id){
-    //alg source: https://www.dsprelated.com/showthread/comp.dsp/97276-1.php
+    // Alg source: https://www.dsprelated.com/showthread/comp.dsp/97276-1.php
     map<int, vector<double> >::iterator x_it;
     map<int, vector<double> >::iterator x2_it;
     
@@ -67,25 +74,24 @@ pair<double, double> Analyzer::getAverageAndVariance(string &ur_field, uint64_t 
     double sx = 0;
     double sx2 = 0;
 
-    //initialize time window
+    // Initialize time window
     if (x[ur_field][*ur_id].size() < series_length){
         //add new data to time window
         x[ur_field][*ur_id].push_back(new_value);
         x2[ur_field][*ur_id].push_back(new_value*new_value);
 
-        //count sum of values in window
+        // Count sum of values in window
         meta_it->second[meta_id][SX] = to_string(new_value + stod(meta_it->second[meta_id][SX],nullptr));
         meta_it->second[meta_id][SX2] = to_string(new_value*new_value+ stod(meta_it->second[meta_id][SX2],nullptr));
         
         return pair<double, double> (-1,-1);
-    }
-    //count moving average and variance
-    else {
-        //change values in time window
+    // Count moving average and variance
+    } else {
+        // Change values in time window
         rotate(x[ur_field][*ur_id].begin(), x[ur_field][*ur_id].begin()+1, x[ur_field][*ur_id].end());
         rotate(x2[ur_field][*ur_id].begin(), x2[ur_field][*ur_id].begin()+1, x2[ur_field][*ur_id].end());
 
-        //do a calculation
+        // Do a calculation
         double new_x = new_value; 
         double new_x2 = new_value*new_value;
 
@@ -115,56 +121,52 @@ pair<double, double> Analyzer::getAverageAndVariance(string &ur_field, uint64_t 
  * BEGIN TIME SERIES SERVICE AND INIT METHODS
  */
 
-//store data in data series based on configured values
+// Store data in data series based on configured values
 double Analyzer::pushData(double *ur_time, double *ur_data, map<string, map<string, vector<string> > >::iterator &meta_it, map<int, vector<double> >::iterator &sensor_it, string meta_id){
     double new_value = 0;
     string store_mode = meta_it->second["general"][STORE_MODE];
     int series_length = stoi (meta_it->second["general"][SERIES_LENGTH],nullptr);
 
-    //save data based on store mode
+    // Save data based on store mode
     if (store_mode == "simple"){
         new_value = *ur_data;
-    }
-    else if (store_mode == "average"){
+    } else if (store_mode == "average"){
         double average = stod (meta_it->second[meta_id][AVERAGE],nullptr);
         new_value = *ur_data - average;
-    }
-    else if (store_mode == "delta"){
+    } else if (store_mode == "delta"){
         double prev_value = stod (meta_it->second[meta_id][PREV_VALUE],nullptr);
         new_value = *ur_data - prev_value;
         meta_it->second[meta_id][PREV_VALUE] = to_string(*ur_data);
-    }
-    else {
+    } else {
         cerr << "ERROR: Unknown mode" << endl;
     }
 
-    //insert new value
+    // Insert new value
     if (series_length > sensor_it->second.size()){
-        //push back
+        // Push back
         sensor_it->second.push_back(new_value);        
-    }
-    else {
+    } else {
         //back()
         sensor_it->second.back() = new_value;
     }
-    //new value field is useful just for alert detection methods -> not relevant in metaProfile
+    // New value field is useful just for alert detection methods -> not relevant in metaProfile
     meta_it->second["metaData"][NEW_VALUE] = to_string(new_value);
     meta_it->second["metaData"][LAST_TIME] = to_string(*ur_time);
+    cout << "new data pushed: " << new_value << endl;
     return new_value;
 }
 
 void Analyzer::modifyMetaData(string &ur_field, uint64_t *ur_id ,map<string, map<string, vector<string> > >::iterator &meta_it, map<int, vector<double> >::iterator &sensor_it, string meta_id){
-    int flag = 0; //decision flag
+    int flag = 0; // Decision flag
 
-    //determine profile values
+    // Determine profile values
     for (auto profile_values:  meta_it->second["profile"]){
         if ( profile_values == "median" ){
-            //median method
+            // Median method
             meta_it->second[meta_id][MEDIAN] = to_string(getMedian(sensor_it));
-        }
-        else if (profile_values == "average" || profile_values == "variance") {
-            //moving varinace and average method
-            //skip unnecessary calls
+        } else if (profile_values == "average" || profile_values == "variance") {
+            // Moving varinace and average method
+            // Skip unnecessary calls
             if (flag == 1 ){
                 continue;
             }
@@ -172,9 +174,8 @@ void Analyzer::modifyMetaData(string &ur_field, uint64_t *ur_id ,map<string, map
             meta_it->second[meta_id][AVERAGE] = to_string(determine_values.first);
             meta_it->second[meta_id][VARIANCE] = to_string(determine_values.second);
             flag = 1;
-        }
-        else if (profile_values == "cum_average"){
-            //cum moving average method
+        } else if (profile_values == "cum_average"){
+            // Cum moving average method
             meta_it->second[meta_id][CUM_AVERAGE] = to_string(getCumulativeAverage(sensor_it, meta_it,meta_id));
         }
     }
@@ -184,49 +185,55 @@ int Analyzer::initSeries(string &ur_field, uint64_t *ur_id, double *ur_data, dou
     map<string, map<string, vector<string> > >::iterator meta_it;
     map<int, vector<double> >::iterator sensor_it;
 
-    //test if meta information exists
+    // Test if meta information exists
     meta_it = series_meta_data.find(ur_field);
     if (meta_it != series_meta_data.end()){
 
-        //cast necessary meta info values
+        // Cast necessary meta info values
         int learning_length = stoi (meta_it->second["general"][LEARNING_LENGTH],nullptr);
         int series_length = stoi (meta_it->second["general"][SERIES_LENGTH],nullptr);
         int rotate_cnt = stoi (meta_it->second["metaProfile"][ROTATE],nullptr);
-
-        //test if sensor id exists
+        int ignore_cnt = stoi (meta_it->second["general"][IGNORE_LENGTH],nullptr);
+        
+        if (ignore_cnt > 0){
+            meta_it->second["general"][IGNORE_LENGTH] = to_string(--ignore_cnt);
+            //verbose
+            cout << "ignoring" << endl;
+            return 5;
+        }
+        // Test if sensor id exists
         sensor_it = control[ur_field].find(*ur_id);
         if ( sensor_it != control[ur_field].end() ){
 
-            //learning profile phase
+            // Learning profile phase
             if ( learning_length > sensor_it->second.size() + rotate_cnt){
-                //cout << "series created -> learning phase" << endl;
+                //verbose: cout << "series created -> learning phase" << endl;
                 if (series_length > sensor_it->second.size()){ 
+                    //verbose
                     cout << "learning phase" << endl; 
-                    //push data 
+                    // Push data 
                     pushData(ur_time, ur_data, meta_it, sensor_it, "metaProfile");
-                    //sensor_it->second.push_back(*ur_data);
-                    //modify profile values
+                    // Modify profile values
                     modifyMetaData(ur_field,ur_id,meta_it, sensor_it, "metaProfile");
                     return 4;
-                }
-                //rotate values in learning phase
-                else {
+                // Rotate values in learning phase
+                } else {
+                    //verbose
                     cout << "rotate values" <<endl;
                     rotate( sensor_it->second.begin(), sensor_it->second.begin()+1, sensor_it->second.end());
-                    //push data 
+                    // Push data 
                     pushData(ur_time, ur_data, meta_it, sensor_it, "metaProfile");
-                    //sensor_it->second.back() = *ur_data;
                     rotate_cnt++;
                     meta_it->second["metaProfile"][ROTATE] = to_string(rotate_cnt);
-                    //modify profile values
+                    // Modify profile values
                     modifyMetaData(ur_field,ur_id,meta_it, sensor_it, "metaProfile");
                     return 3;
                 }
-            }
-            else {
-                //learning phase has been finished
-                //check if init phase is finished for the first time and copy init values
+            // Learning phase has been finished
+            } else {
+                // Check if init phase is finished for the first time and copy init values
                 if ( meta_it->second["metaData"][AVERAGE] == "x"){
+                    //verbose
                     cout << "learning phase finished -> start analyzing" << endl;
 
                     meta_it->second["metaData"][AVERAGE] = meta_it->second["metaProfile"][AVERAGE];
@@ -239,32 +246,29 @@ int Analyzer::initSeries(string &ur_field, uint64_t *ur_id, double *ur_data, dou
                 }
                 return 0;
             }
-        }
-        //sensor id not found - create new record 
-        else {
+        // Sensor id not found - create a new record 
+        } else {
             vector<double> tmp;
             string store_mode = meta_it->second["general"][STORE_MODE];
-            //init variables by zeros in case of delta store mode
+            // Init variables by zeros in case of delta store mode
             if (store_mode == "delta"){
                 tmp.push_back(0);
                 meta_it->second["metaProfile"][AVERAGE] = to_string(0);
-            }
-            //init variables by first received value
-            else{
+            // Init variables by first received value
+            } else{
                 tmp.push_back(*ur_data);
                 meta_it->second["metaProfile"][AVERAGE] = to_string(*ur_data);
             }
             control[ur_field].insert(pair<int, vector<double> >(*ur_id,tmp));
             meta_it->second["metaProfile"][PREV_VALUE] = to_string(*ur_data);
             sensor_it = control[ur_field].find(*ur_id);
-            //modify profile values
+            // Modify profile values
             modifyMetaData(ur_field,ur_id,meta_it, sensor_it, "metaProfile");
             meta_it->second["metaProfile"][ID] = to_string(*ur_id);
             return 2;
         }
-    }
-    else {
-     //   cerr << "INFO: Field " << ur_field <<  " meta specification missig. Skipping... " << endl;
+    } else {
+     //verbose:cerr << "INFO: Field " << ur_field <<  " meta specification missig. Skipping... " << endl;
         return 1;
     }
 }
@@ -277,7 +281,7 @@ int Analyzer::initSeries(string &ur_field, uint64_t *ur_id, double *ur_data, dou
  * BEGIN TIME SERIES PROCESS
  */
 
-//print series data
+// Print series data
 void Analyzer::printSeries(string &ur_field){
     cout << "field: " << ur_field << endl;;
     for (auto element : control[ur_field]){
@@ -307,28 +311,23 @@ void Analyzer::printSeries(string &ur_field){
 int Analyzer::getIndex(string name){
     if (name == "median"){
         return MEDIAN;
-    }
-    else if (name == "average"){
+    } else if (name == "average"){
         return AVERAGE;
-    }
-    else if (name == "variance"){
+    } else if (name == "variance"){
         return VARIANCE;
-    }
-    else if (name == "cum_average"){
+    } else if (name == "cum_average"){
         return CUM_AVERAGE;
-    }
-    else if (name == "new_value"){
+    } else if (name == "new_value"){
         return NEW_VALUE;
     }
 }
 
 void Analyzer::addAlert(string & profile_name, string alert_message, map<string, vector<string> > & alert_str){
-    //find key
+    // Find key
     auto alert_it = alert_str.find(profile_name);
     if (alert_it != alert_str.end()){
         alert_it->second.push_back(alert_message);
-    }
-    else {
+    } else {
         vector<string> tmp;
         tmp.push_back(alert_message);
         alert_str.insert(pair<string, vector<string> >(profile_name,tmp));
@@ -338,48 +337,43 @@ void Analyzer::addAlert(string & profile_name, string alert_message, map<string,
 void Analyzer::dataLimitCheck(map<string, map<string, vector<string> > >::iterator &meta_it, string ur_field, uint64_t *ur_id, double *ur_time ,double *ur_data, map<string,vector<string> > &alert_str){
 
     for (auto profile_values: meta_it->second["profile"]){
-        //test if soft limits are set
-        //soft min, max limits are dependent -> test for soft min is ok
+        // Test if soft limits are set
+        // Soft min, max limits are dependent -> test for soft min is ok
         if (meta_it->second[profile_values][SOFT_MIN] != "-"){
         
-            //soft limit test 
-            //soft limit min
+            // Soft limit test 
+            // Soft limit min
             if (stod(meta_it->second["metaData"][getIndex(profile_values)],nullptr)  < stod(meta_it->second[profile_values][SOFT_MIN],nullptr) ){
-                //add counter or create alert message if the counter is above soft period 
+                // Add counter or create alert message if the counter is above soft period 
                 if ( stoi (meta_it->second[profile_values][S_MIN_LIMIT],nullptr) > stod(meta_it->second[profile_values][SOFT_PERIOD]) ){
                     cout << "ALERT: Lower soft limit" << endl;
                     addAlert(profile_values, "Lower soft limit", alert_str);
-                }
-                else{
+                } else{
                     meta_it->second[profile_values][S_MIN_LIMIT] = to_string(stoi (meta_it->second[profile_values][S_MIN_LIMIT],nullptr) + 1);
                 }
-            }
-            else {
-                //reset counter
+            } else {
+                // Reset counter
                 meta_it->second[profile_values][S_MIN_LIMIT] = "0";
             }
 
-            //soft limit max
+            // Soft limit max
             if (stod(meta_it->second["metaData"][getIndex(profile_values)],nullptr)  > stod(meta_it->second[profile_values][SOFT_MAX],nullptr) ){
-                //add counter
+                // Add counter
                 if ( stoi (meta_it->second[profile_values][S_MAX_LIMIT],nullptr) > stod(meta_it->second[profile_values][SOFT_PERIOD]) ){
                     cout <<  "ALERT: Higher soft limit" << endl;
                     addAlert(profile_values, "Higher soft limit", alert_str);
-                }
-                else{
+                } else{
                     meta_it->second[profile_values][S_MAX_LIMIT] = to_string(stoi (meta_it->second[profile_values][S_MAX_LIMIT],nullptr) + 1);
                 }
-            }
-            else {
-                //reset counter
+            } else {
+                // Reset counter
                 meta_it->second[profile_values][S_MAX_LIMIT] = "0";
             }
-        }
-        //test if hard limits are set
-        //hard min, max limits are dependent -> test for hard min is ok
-        else if (meta_it->second[profile_values][HARD_MIN] != "-"){
-            //hard limit test
-            //hard limit min
+        // Test if hard limits are set
+        // Hard min, max limits are dependent -> test for hard min is ok
+        } else if (meta_it->second[profile_values][HARD_MIN] != "-"){
+            // Hard limit test
+            // Hard limit min
             if (stod(meta_it->second["metaData"][getIndex(profile_values)],nullptr)  < stod(meta_it->second[profile_values][HARD_MIN],nullptr) ){
                 cout << "ALERT: Lower hard limit" << endl;;
                 addAlert(profile_values, "Lower hard limit", alert_str);
@@ -399,29 +393,26 @@ void Analyzer::dataChangeCheck(map<int,vector<double> >::iterator &sensor_it ,ma
     
     for (auto profile_values: meta_it->second["profile"]){
         new_value = sensor_it->second.back();
-        //test if grow limits are set
-        //grow up,down limits are dependent -> test for grow up is ok
+        // Test if grow limits are set
+        // Grow up,down limits are dependent -> test for grow up is ok
         if (meta_it->second[profile_values][GROW_UP] != "-"){
-            //divide by zero protection
+            // Divide by zero protection
             if (stod(meta_it->second["metaData"][getIndex(profile_values)],nullptr) == 0 ){
                 alert_coef = 1; //-> mean no data grow change 
-            }
-            else {
+            } else {
                 alert_coef = new_value/stod(meta_it->second["metaData"][getIndex(profile_values)],nullptr);
             }
-            //test grow limits
+            // Test grow limits
             if (alert_coef > stod(meta_it->second[profile_values][GROW_UP],nullptr)){
                 cout << "ALERT: GROW UP" << endl;
                 addAlert(profile_values, "Higher grow limit", alert_str);
                 
             }
-            
             if (alert_coef < stod(meta_it->second[profile_values][GROW_DOWN],nullptr)){
                 cout << "ALERT: GROW DOWN" << endl;
                 addAlert(profile_values, "Lower grow limit", alert_str);
             }
         }
-        
     }
 }
 
@@ -430,26 +421,28 @@ map<string,vector<string> > Analyzer::analyzeData(string ur_field, uint64_t *ur_
     map<int, vector<double> >::iterator sensor_it;
     map<string, vector<string> > alert_str;
     
-    //find proper iterators
+    // Find proper iterators
     meta_it = series_meta_data.find(ur_field);
     sensor_it = control[ur_field].find(*ur_id);
-    //*check conditions*//
-    //soft,hard limit check
+    /*
+    * Check conditions
+    */
+    // Soft, hard limit check
     dataLimitCheck(meta_it, ur_field, ur_id, ur_time ,ur_data, alert_str);
-    //grow check
+    // Grow check
     dataChangeCheck(sensor_it, meta_it, ur_field, ur_id, ur_time, ur_data, alert_str);
 
-    //push new data and do calculation
+    // Push new data and do calculation
+    rotate( sensor_it->second.begin(), sensor_it->second.begin()+1, sensor_it->second.end());
     pushData(ur_time, ur_data, meta_it, sensor_it, "metaData");
     modifyMetaData(ur_field,ur_id,meta_it, sensor_it, "metaData");
 
-    //do action - return result 
+    // Do action - return result 
     return alert_str;
 
 }
 
-//void Analyzer::sentAlert(map<string, vector<string> > &alert_str, trap_ctx_t *ctx, string &ur_field, uint64_t *ur_id, double *ur_time, ur_template_t *alert_template, void *data_alert){
-void Analyzer::sentAlert(map<string, vector<string> > &alert_str, string &ur_field, uint64_t *ur_id, double *ur_time){
+void Analyzer::sendAlert(map<string, vector<string> > &alert_str, string &ur_field, uint64_t *ur_id, double *ur_time){
     if (alert_str.empty()){
         cout << "no alert" << endl;
         return;
@@ -457,16 +450,13 @@ void Analyzer::sentAlert(map<string, vector<string> > &alert_str, string &ur_fie
      
     for (auto profile: alert_str){
         for (auto elem: profile.second){
-            cout << "sent: " << profile.first << ", " << elem << endl;
+            cout << "send: " << profile.first << ", " << elem << endl;
             ur_set(alert_template, data_alert, F_ID, *ur_id);
             ur_set(alert_template, data_alert, F_TIME, *ur_time);
-            //trap_ctx_send(ctx, 0, data_alert, ur_rec_size(alert_template, data_alert));
             trap_ctx_send(alert_ifc, 0, data_alert, ur_rec_size(alert_template, data_alert));
             //trap_ctx_send_flush(alert_ifc,0);
         }
-        
     }
-
 }
 
 void Analyzer::periodicCheck(int period,  string ur_field){
@@ -479,12 +469,12 @@ void Analyzer::periodicCheck(int period,  string ur_field){
         int result = std::time(nullptr);
         if (result - stoi(meta_it->second["metaData"][LAST_TIME]) > period ){
             map<string,vector<string> > alert_str;
-            //alert data hasn't bee received
+            // Alert data hasn't been received
             cout << "ALERT: data period" << endl;
             addAlert(ur_field, "Periodic check", alert_str);
             uint64_t ur_id = stoi(meta_it->second["metaProfile"][ID],nullptr);
             double ur_time = stod(meta_it->second["metaData"][LAST_TIME],nullptr);
-            sentAlert(alert_str, ur_field, &ur_id, &ur_time);
+            sendAlert(alert_str, ur_field, &ur_id, &ur_time);
         }
     }
 }
@@ -498,31 +488,27 @@ void Analyzer::periodicExport(int period, string ur_field){
         sleep (period);
         for (auto elem: ur_export_fields){
             for (auto field: elem.second.second){
-                //set unirec record 
+                // Set unirec record 
                 if (field == "average"){
                     cout << "ADD AVERAGE " << stod(meta_it->second["metaData"][AVERAGE],nullptr) << endl;
                     ur_set(export_template[elem.first], data_export[elem.first], F_average, stod(meta_it->second["metaData"][AVERAGE],nullptr));
-                }
-                else if (field == "variance") {
+                } else if (field == "variance") {
                     cout << "ADD VARIANCE: " << stod(meta_it->second["metaData"][VARIANCE],nullptr) <<  endl;
                     ur_set(export_template[elem.first], data_export[elem.first], F_variance, stod(meta_it->second["metaData"][VARIANCE],nullptr));
 
-                }
-                else if (field == "median"){
+                } else if (field == "median"){
                     cout << "ADD MEDIAN" << endl;
                     ur_set(export_template[elem.first], data_export[elem.first], F_median, stod(meta_it->second["metaData"][MEDIAN],nullptr));
 
-                }
-                else if (field == "cum_average"){
+                } else if (field == "cum_average"){
                     cout << "ADD CUM_AVERAGE " << stod(meta_it->second["metaData"][CUM_AVERAGE],nullptr) << endl;
                     ur_set(export_template[elem.first], data_export[elem.first], F_cum_average, stod(meta_it->second["metaData"][CUM_AVERAGE],nullptr));
 
                 }
             }
             
-            //send data for periodic export
-            trap_ctx_send(data_export_ifc, elem.first, data_export[elem.first], ur_rec_size(export_template[elem.first], data_export[elem.first]));
-            //trap_ctx_send_flush
+            // Send data for periodic export
+            trap_ctx_send(export_ifc, elem.first, data_export[elem.first], ur_rec_size(export_template[elem.first], data_export[elem.first]));
         }
     }
 }
@@ -530,7 +516,7 @@ void Analyzer::periodicExport(int period, string ur_field){
 void Analyzer::runThreads(string &ur_field){
     map<string, map<string, vector<string> > >::iterator meta_it;
     meta_it = series_meta_data.find(ur_field);
-    //run periodic check if it is set
+    // Run periodic check if it is set
     if (meta_it->second["general"][PERIODIC_CHECK] != "-" && meta_it->second["metaData"][CHECKED_FLAG] == "x"){
         thread t1(&Analyzer::periodicCheck,this,stoi(meta_it->second["general"][PERIODIC_CHECK],nullptr),ur_field);
         t1.detach();
@@ -545,17 +531,18 @@ void Analyzer::runThreads(string &ur_field){
     }
 }
 
-//data series processing
-//void Analyzer::processSeries(string ur_field, uint64_t *ur_id, double *ur_time, double *ur_data, trap_ctx_t *alert_ifc, trap_ctx_t *data_export_ifc, ur_template_t *alert_template, void *data_alert) {
+// Data series processing
 void Analyzer::processSeries(string ur_field, uint64_t *ur_id, double *ur_time, double *ur_data) {
     int init_state = 0;
-    //initialize data series
-    /*return 
-    * 0 - init done
-    * 1 - ur_field is not specified in the template
-    * 2 - new record has been created
-    * 3 - values were rotated
-    * 4 - new item was added - learning phase
+    // Initialize data series
+    /*
+    * return values: 
+    *  0 - init done
+    *  1 - ur_field is not specified in the template
+    *  2 - new record has been created
+    *  3 - values were rotated
+    *  4 - new item was added - learning phase
+    *  5 - ignore phase
     */
     init_state = initSeries(ur_field, ur_id, ur_data, ur_time);
     if (init_state != 1){
@@ -563,15 +550,12 @@ void Analyzer::processSeries(string ur_field, uint64_t *ur_id, double *ur_time, 
     }
     
     if (init_state == 0){ 
-        //analyze data series
+        // Analyze data series
         auto alert_str = analyzeData(ur_field, ur_id, ur_data, ur_time);
-        //sentAlert(alert_str, alert_ifc, ur_field, ur_id, ur_time,alert_template, data_alert);
-        sentAlert(alert_str, ur_field, ur_id, ur_time);
+        sendAlert(alert_str, ur_field, ur_id, ur_time);
         runThreads(ur_field);
     }
-
 }
-
 /* 
  * END TIME SERIES PROCESS
  */

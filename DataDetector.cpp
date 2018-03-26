@@ -25,9 +25,6 @@
     TODO
     podpora vebose zprav
     vylepseni exportovaciho formatu (pridat string)
-    uprava nazvu promennych
-    doplneni komentaru
-    doplnit ignore fazi
     testovani scenaru
 */
 
@@ -65,7 +62,7 @@ void printSeries( map<string,map<string, vector<string> > >& series_meta_data){
 * \param[in] series_meta_data
 * \param[out] export_template Unirec templates for export interfaces
 * \param[out] ctx_export Export trap interfaces
-* \param[out] data_export Unirec recors for export interfaces
+* \param[out] data_export Unirec allocated records for export interfaces
 * \param[out] ur_export_fields Map of unirec keys for each interface
 * \returns Result of initialization. 0 and 1 is success. Other values are errors.
 */
