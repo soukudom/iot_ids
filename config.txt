@@ -29,5 +29,5 @@
 #TIME: 3;5;delta;3;-;profile(average,variance,median,cum_average,new_value,);average(1,5,-10,10,5,2,0.2,-,0,0,);variance(0,10,0,20,5,3,0.3,0,0,0,);median(1,5,-10,10,5,2,0.2,-,0,0,);cum_average(1,5,-10,10,5,2,0.2,-,0,0,);new_value(10,13,2,15,2,-,-,-,0,0,);export(-,);
 
 #### Z-WAVE ####
-TIME: 3;5;0;delta;15;-;profile(average,variance,median,cum_average,new_value,);average(1,20,-10,25,5,2,0.2,0,0,);variance(0,10,0,20,5,3,0.3,0,0,);median(1,20,-10,25,5,2,0.2,0,0,);cum_average(1,20,-10,25,5,2,0.2,0,0,);new_value(1,13,2,25,2,-,-,0,0,);export(-,);
+TIME: 3;5;0;delta;15;5;profile(average,variance,median,cum_average,new_value,);average(1,20,-10,25,5,2,0.2,0,0,);variance(0,10,0,20,5,3,0.3,0,0,);median(1,20,-10,25,5,2,0.2,0,0,);cum_average(1,20,-10,25,5,2,0.2,0,0,);new_value(1,13,2,25,2,-,-,0,0,);export(average,);
 SOAFCount: 3;5;3;delta;-;-;profile(average,);average(0,6,-1,10,5,2,0.2,0,0,);variance(-,-,-,-,-,-,-,0,0,);cum_average(-,-,-,-,-,-,-,0,0,);new_value(-,-,-,-,-,-,-,0,0,);export(-,);

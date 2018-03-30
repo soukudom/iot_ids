@@ -24,7 +24,8 @@ void Analyzer::setAlertInterface(trap_ctx_t *alert_ifc, ur_template_t *alert_tem
     this->data_alert = data_alert;
 }
 
-void Analyzer::setExportInterface(trap_ctx_t *export_ifc, ur_template_t **export_template, void **data_export, map<int, pair<string, vector<string> > > ur_export_fields){
+//!!!void Analyzer::setExportInterface(trap_ctx_t *export_ifc, ur_template_t **export_template, void **data_export, map<int, pair<string, vector<string> > > ur_export_fields){
+void Analyzer::setExportInterface(trap_ctx_t *export_ifc, ur_template_t **export_template, void **data_export, map<int, vector<string> > ur_export_fields){
     
     this->export_ifc = export_ifc;
     this->export_template = export_template;
@@ -498,7 +499,8 @@ void Analyzer::periodicExport(int period, string ur_field){
     while (true){
         sleep (period);
         for (auto elem: ur_export_fields){
-            for (auto field: elem.second.second){
+            //!!!for (auto field: elem.second.second){
+            for (auto field: elem.second){
                 // Set unirec record 
                 if (field == "average"){
                     cout << "ADD AVERAGE " << stod(meta_it->second["metaData"][AVERAGE],nullptr) << endl;

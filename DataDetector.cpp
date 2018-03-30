@@ -66,7 +66,8 @@ void printSeries( map<string,map<string, vector<string> > >& series_meta_data){
 * \param[out] ur_export_fields Map of unirec keys for each interface
 * \returns Result of initialization. 0 and 1 is success. Other values are errors.
 */
-int initExportInterfaces(map<string, map<string, vector<string> > > &series_meta_data,  ur_template_t *** export_template, trap_ctx_t **ctx_export, void ***data_export, map<int,pair<string, vector<string> > > &ur_export_fields){
+//!!!int initExportInterfaces(map<string, map<string, vector<string> > > &series_meta_data,  ur_template_t *** export_template, trap_ctx_t **ctx_export, void ***data_export, map<int,pair<string, vector<string> > > &ur_export_fields){
+int initExportInterfaces(map<string, map<string, vector<string> > > &series_meta_data,  ur_template_t *** export_template, trap_ctx_t **ctx_export, void ***data_export, map<int, vector<string>  > &ur_export_fields){
     string interface_spec;      // Name of output interface
     int flag = 0;               // Flag for definig output interface name
     vector<string> field_name;  // Tmp value for export ur_values
@@ -97,8 +98,9 @@ int initExportInterfaces(map<string, map<string, vector<string> > > &series_meta
                 }   
                 // Insert tmp variables to the map structure
                 if (flag == 1){
-                    pair <string, vector<string> > tmp(main_key.first,field_name); 
-                    ur_export_fields.insert(pair<int,pair<string, vector<string> > >(number_of_keys-1, tmp));
+                    //pair <string, vector<string> > tmp(main_key.first,field_name); 
+                    //!!!ur_export_fields.insert(pair<int,pair<string, vector<string> > >(number_of_keys-1, tmp));
+                    ur_export_fields.insert(pair<int, vector<string> >(number_of_keys-1, field_name));
                 }
             }
         }
@@ -141,7 +143,8 @@ int initExportInterfaces(map<string, map<string, vector<string> > > &series_meta
         // Clear old value in tmp variable
         tmp_ur_export.clear();
         // Create unirec export format
-        for (auto elem: ur_export_fields[i].second){
+        //!!!for (auto elem: ur_export_fields[i].second){
+        for (auto elem: ur_export_fields[i]){
             tmp_ur_export += elem + ",";
         }
         // Remove the last comma
@@ -177,7 +180,8 @@ int main (int argc, char** argv){
     int verbose = 0;                                          // Verbose level
     void *data_alert = NULL;                                  // Unirec output alert record
     void **data_export = NULL;                                // Unirec output export record
-    map<int,pair<string, vector<string> > > ur_export_fields; // Map with unirec values for each interface. The first key is number of interface and the second is name of record according to the configuration file.
+    //!!!map<int,pair<string, vector<string> > > ur_export_fields; // Map with unirec values for each interface. The first key is number of interface and the second is name of record according to the configuration file (ur_field). In the last vector are profile items for export.
+    map<int, vector<string> > ur_export_fields; // Map with unirec values for each interface. The first key is number of interface and the second is name of record according to the configuration file (ur_field). In the last vector are profile items for export.
 
     int ret = 2;                                              // Tmp store variable
     uint64_t *ur_id = 0;                                      // Tmp store variable

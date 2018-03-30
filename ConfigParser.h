@@ -51,7 +51,7 @@ class ConfigParser{
         */
         map<string, map<string, vector<string> > > getSeries();
     private:
-        map<string, map<string, vector<string> > > series; // parsed data from configuration file
+        map<string, map<string, vector<string> > > series; // parsed data from configuration file. Data sequence: unirec field, subsection category (profile, profile items, export, general, metaData, metaProfile, profile), config params
         ifstream config; // configuration filename
 };
 

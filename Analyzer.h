@@ -60,7 +60,8 @@ public:
     * \param[in] export_template Unirec templates for export interfaces
     * \param[in] data_export Unirec allocated records for export interfaces
     */
-    void setExportInterface(trap_ctx_t *export_ifc, ur_template_t **export_template, void **data_export, map<int, pair<string, vector<string> > > ur_export_fields);
+    //!!!void setExportInterface(trap_ctx_t *export_ifc, ur_template_t **export_template, void **data_export, map<int, pair<string, vector<string> > > ur_export_fields);
+    void setExportInterface(trap_ctx_t *export_ifc, ur_template_t **export_template, void **data_export, map<int, vector<string> > ur_export_fields);
 
 
 private:
@@ -74,10 +75,11 @@ private:
     trap_ctx_t *export_ifc;                                  // Export trap interface
     ur_template_t **export_template;                         // Unirec templates for export interfaces
     void **data_export;                                      // Unirec allocated records for export interfaces
-    map<int,pair<string, vector<string> > >ur_export_fields; // Map of unirec keys for each interface
+    //!!!map<int,pair<string, vector<string> > >ur_export_fields; // Map with unirec values for each interface. The first key is number of interface and the second is name of record according to the configuration file (ur_field). In the last vector are profile items for export.
+    map<int,vector<string> >ur_export_fields; // Map with unirec values for each interface. The first key is number of interface and the second is name of record according to the configuration file (ur_field). In the last vector are profile items for export.
 
-    map<string, map<string, vector<string> > > series_meta_data; // Parsed data from configuration file by ConfigParser
-    map<string, map<int, vector<double> > > control;             // Structure fro time series data
+    map<string, map<string, vector<string> > > series_meta_data; // Parsed data from configuration file by ConfigParser. Data sequence: unirec field, subsection category (profile, profile items, export, general, metaData, metaProfile, profile), config params
+    map<string, map<int, vector<double> > > control;             // Structure for time series data. Data sequence: unirec field, sensor ID, data series values
 
     /*
     * Buffers for moving variance
