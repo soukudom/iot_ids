@@ -57,6 +57,9 @@ char *ur_field_names_static[] = {
    "VALUE",
    "variance",
    "writeCount",
+   "alert_desc",
+   "profile_key",
+   "ur_key",
 };
 short ur_field_sizes_static[] = {
    8, /* ACKCount */
@@ -113,6 +116,9 @@ short ur_field_sizes_static[] = {
    8, /* VALUE */
    8, /* variance */
    8, /* writeCount */
+   -1, /* alert_desc */
+   -1, /* profile_key */
+   -1, /* ur_key */
 };
 ur_field_type_t ur_field_types_static[] = {
    UR_TYPE_DOUBLE, /* ACKCount */
@@ -169,6 +175,9 @@ ur_field_type_t ur_field_types_static[] = {
    UR_TYPE_DOUBLE, /* VALUE */
    UR_TYPE_DOUBLE, /* variance */
    UR_TYPE_DOUBLE, /* writeCount */
+   UR_TYPE_STRING, /* alert_desc */
+   UR_TYPE_STRING, /* profile_key */
+   UR_TYPE_STRING, /* ur_key */
 };
-ur_static_field_specs_t UR_FIELD_SPECS_STATIC = {ur_field_names_static, ur_field_sizes_static, ur_field_types_static, 54};
-ur_field_specs_t ur_field_specs = {ur_field_names_static, ur_field_sizes_static, ur_field_types_static, 54, 54, 54, NULL, UR_UNINITIALIZED};
+ur_static_field_specs_t UR_FIELD_SPECS_STATIC = {ur_field_names_static, ur_field_sizes_static, ur_field_types_static, 57};
+ur_field_specs_t ur_field_specs = {ur_field_names_static, ur_field_sizes_static, ur_field_types_static, 57, 57, 57, NULL, UR_UNINITIALIZED};

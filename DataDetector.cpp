@@ -23,8 +23,6 @@
 
 /*
     TODO
-    podpora vebose zprav
-    vylepseni exportovaciho formatu (pridat string)
     testovani scenaru
 */
 
@@ -193,8 +191,6 @@ int main (int argc, char** argv){
     ConfigParser cp("config.txt");
     auto series_meta_data = cp.getSeries();
 
-    // Create analyze object
-    Analyzer series_a (series_meta_data);
 
     //printSeries(series_meta_data);
  
@@ -230,6 +226,9 @@ int main (int argc, char** argv){
     if (verbose >= 0) {
         cout << "Verbosity level: " <<  trap_get_verbose_level() << endl;;
     }
+
+    // Create analyze object
+    Analyzer series_a (series_meta_data, verbose);
 
     // Check number of interfaces parameter
     if (strlen(ifc_spec.types) != 2) {
@@ -270,7 +269,7 @@ int main (int argc, char** argv){
         goto cleanup;
     }
     // Create alert template
-    alert_template = ur_ctx_create_output_template(ctx, 0, "ID,TIME", NULL);
+    alert_template = ur_ctx_create_output_template(ctx, 0, "ID,TIME,ur_key,alert_desc,profile_key", NULL);
     if (alert_template == NULL) {
         cerr <<  "ERROR: unirec alert template create fail" << endl;
         exit_value=2;

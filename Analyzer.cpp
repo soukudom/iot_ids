@@ -12,7 +12,7 @@
 Analyzer::Analyzer() = default;
 
 // Param constructor
-Analyzer::Analyzer(map<string, map<string, vector<string> > > meta_data): series_meta_data(meta_data) {}
+Analyzer::Analyzer(map<string, map<string, vector<string> > > meta_data,int verbose): series_meta_data(meta_data), verbose(verbose) {}
 
 // Default destructor
 Analyzer::~Analyzer() = default;
@@ -152,11 +152,13 @@ double Analyzer::pushData(double *ur_time, double *ur_data, map<string, map<stri
     // New value field is useful just for alert detection methods -> not relevant in metaProfile
     meta_it->second["metaData"][NEW_VALUE] = to_string(new_value);
     meta_it->second["metaData"][LAST_TIME] = to_string(*ur_time);
-    cout << "new data pushed: " << new_value << endl;
+    if (verbose >= 0){
+        cout << "VERBOSE: New data pushed: " << new_value << endl;
+    }
     return new_value;
 }
 
-void Analyzer::modifyMetaData(string &ur_field, uint64_t *ur_id ,map<string, map<string, vector<string> > >::iterator &meta_it, map<int, vector<double> >::iterator &sensor_it, string meta_id){
+void Analyzer::modifyMetaData(string &ur_field, uint64_t *ur_id ,map<string, map<string, vector<string> > >::iterator &meta_it, map<int, vector<double> >::iterator sensor_it, string meta_id){
     int flag = 0; // Decision flag
 
     // Determine profile values
@@ -197,8 +199,9 @@ int Analyzer::initSeries(string &ur_field, uint64_t *ur_id, double *ur_data, dou
         
         if (ignore_cnt > 0){
             meta_it->second["general"][IGNORE_LENGTH] = to_string(--ignore_cnt);
-            //verbose
-            cout << "ignoring" << endl;
+            if (verbose >= 0){
+                cout << "VERBOSE: Ignoring phase" << endl;
+            }
             return 5;
         }
         // Test if sensor id exists
@@ -207,10 +210,13 @@ int Analyzer::initSeries(string &ur_field, uint64_t *ur_id, double *ur_data, dou
 
             // Learning profile phase
             if ( learning_length > sensor_it->second.size() + rotate_cnt){
-                //verbose: cout << "series created -> learning phase" << endl;
+                if (verbose >= 0){
+                    cout << "VERBOSE: Series created -> learning phase" << endl;
+                }
                 if (series_length > sensor_it->second.size()){ 
-                    //verbose
-                    cout << "learning phase" << endl; 
+                    if (verbose >= 0){
+                        cout << "VERBOSE: Learning phase" << endl; 
+                    }
                     // Push data 
                     pushData(ur_time, ur_data, meta_it, sensor_it, "metaProfile");
                     // Modify profile values
@@ -218,8 +224,9 @@ int Analyzer::initSeries(string &ur_field, uint64_t *ur_id, double *ur_data, dou
                     return 4;
                 // Rotate values in learning phase
                 } else {
-                    //verbose
-                    cout << "rotate values" <<endl;
+                    if (verbose >= 0){
+                        cout << "VERBOSE: Rotate values" <<endl;
+                    }
                     rotate( sensor_it->second.begin(), sensor_it->second.begin()+1, sensor_it->second.end());
                     // Push data 
                     pushData(ur_time, ur_data, meta_it, sensor_it, "metaProfile");
@@ -233,8 +240,9 @@ int Analyzer::initSeries(string &ur_field, uint64_t *ur_id, double *ur_data, dou
             } else {
                 // Check if init phase is finished for the first time and copy init values
                 if ( meta_it->second["metaData"][AVERAGE] == "x"){
-                    //verbose
-                    cout << "learning phase finished -> start analyzing" << endl;
+                    if (verbose >= 0){
+                        cout << "VERBOSE: learning phase finished -> start analyzing" << endl;
+                    }
 
                     meta_it->second["metaData"][AVERAGE] = meta_it->second["metaProfile"][AVERAGE];
                     meta_it->second["metaData"][VARIANCE] = meta_it->second["metaProfile"][VARIANCE];
@@ -268,7 +276,9 @@ int Analyzer::initSeries(string &ur_field, uint64_t *ur_id, double *ur_data, dou
             return 2;
         }
     } else {
-     //verbose:cerr << "INFO: Field " << ur_field <<  " meta specification missig. Skipping... " << endl;
+        if (verbose >= 1){
+            cout << "VERBOSE: Field " << ur_field <<  " meta specification missig. Skipping... " << endl;
+        }
         return 1;
     }
 }
@@ -283,15 +293,16 @@ int Analyzer::initSeries(string &ur_field, uint64_t *ur_id, double *ur_data, dou
 
 // Print series data
 void Analyzer::printSeries(string &ur_field){
-    cout << "field: " << ur_field << endl;;
+    cout << "field: " << ur_field << endl;
     for (auto element : control[ur_field]){
-        cout << " key: " << element.first << endl; 
-        cout << "  values: " << endl;
+        cout << " ID value: " << element.first << endl; 
+        cout << "  time series values: " << endl;
         cout << "   ";
         for (auto elem: element.second){
             cout << elem << ", ";
         }
         cout << endl;
+    
         cout << "   AVERAGE, VARIANCE, MEDIAN, CUM_AVERAGE, SX, SX2, PREV_VALUE, NEW_VALUE, LAST_TIME, ROTATE, CHECKED_FLAG, ID" << endl;
         cout << "   ";
         for (auto meta: series_meta_data[ur_field]["metaProfile"] ){
@@ -346,7 +357,9 @@ void Analyzer::dataLimitCheck(map<string, map<string, vector<string> > >::iterat
             if (stod(meta_it->second["metaData"][getIndex(profile_values)],nullptr)  < stod(meta_it->second[profile_values][SOFT_MIN],nullptr) ){
                 // Add counter or create alert message if the counter is above soft period 
                 if ( stoi (meta_it->second[profile_values][S_MIN_LIMIT],nullptr) > stod(meta_it->second[profile_values][SOFT_PERIOD]) ){
-                    cout << "ALERT: Lower soft limit" << endl;
+                    if (verbose >= 0){
+                        cout << "VERBOSE: ALERT: Lower soft limit" << endl;
+                    }
                     addAlert(profile_values, "Lower soft limit", alert_str);
                 } else{
                     meta_it->second[profile_values][S_MIN_LIMIT] = to_string(stoi (meta_it->second[profile_values][S_MIN_LIMIT],nullptr) + 1);
@@ -360,7 +373,9 @@ void Analyzer::dataLimitCheck(map<string, map<string, vector<string> > >::iterat
             if (stod(meta_it->second["metaData"][getIndex(profile_values)],nullptr)  > stod(meta_it->second[profile_values][SOFT_MAX],nullptr) ){
                 // Add counter
                 if ( stoi (meta_it->second[profile_values][S_MAX_LIMIT],nullptr) > stod(meta_it->second[profile_values][SOFT_PERIOD]) ){
-                    cout <<  "ALERT: Higher soft limit" << endl;
+                    if (verbose >= 0){
+                        cout <<  "VERBOSE: ALERT: Higher soft limit" << endl;
+                    }
                     addAlert(profile_values, "Higher soft limit", alert_str);
                 } else{
                     meta_it->second[profile_values][S_MAX_LIMIT] = to_string(stoi (meta_it->second[profile_values][S_MAX_LIMIT],nullptr) + 1);
@@ -375,12 +390,16 @@ void Analyzer::dataLimitCheck(map<string, map<string, vector<string> > >::iterat
             // Hard limit test
             // Hard limit min
             if (stod(meta_it->second["metaData"][getIndex(profile_values)],nullptr)  < stod(meta_it->second[profile_values][HARD_MIN],nullptr) ){
-                cout << "ALERT: Lower hard limit" << endl;;
+                if (verbose >= 0){
+                    cout << "VERBOSE: ALERT: Lower hard limit" << endl;
+                }
                 addAlert(profile_values, "Lower hard limit", alert_str);
             }
             //hard limit max
             if (stod(meta_it->second["metaData"][getIndex(profile_values)],nullptr)  > stod(meta_it->second[profile_values][HARD_MAX],nullptr) ){
-                cout  << "ALERT: Higher hard limit" << endl;
+                if (verbose >= 0){
+                    cout  << "VERBOSE: ALERT: Higher hard limit" << endl;
+                }
                 addAlert(profile_values, "Higher hard limit", alert_str);
             }
         }
@@ -403,7 +422,6 @@ void Analyzer::dataChangeCheck(map<int,vector<double> >::iterator &sensor_it ,ma
     
         // Test if grow limits are set
         // Grow up,down limits are dependent -> test for grow up is ok
-        cout << "grow test: " << profile_values << " " << new_value << " / " << profile_value << endl; 
         if (meta_it->second[profile_values][GROW_UP] != "-"){
             // Divide by zero protection
             if (stod(meta_it->second["metaData"][getIndex(profile_values)],nullptr) == 0 ){
@@ -412,15 +430,18 @@ void Analyzer::dataChangeCheck(map<int,vector<double> >::iterator &sensor_it ,ma
                // alert_coef = new_value/stod(meta_it->second["metaData"][getIndex(profile_values)],nullptr);
                 alert_coef = new_value / profile_value;
             }
-            cout << "comparation: " << alert_coef << " < " << stod(meta_it->second[profile_values][GROW_UP],nullptr) << endl;
             // Test grow limits
             if (alert_coef > stod(meta_it->second[profile_values][GROW_UP],nullptr)){
-                cout << "ALERT: GROW UP" << endl;
+                if (verbose >= 0){
+                    cout << "VERBOSE: ALERT: GROW UP" << endl;
+                }
                 addAlert(profile_values, "Higher grow limit", alert_str);
                 
             }
             if (alert_coef < stod(meta_it->second[profile_values][GROW_DOWN],nullptr)){
-                cout << "ALERT: GROW DOWN" << endl;
+                if (verbose >= 0){
+                    cout << "VERBOSE: ALERT: GROW DOWN" << endl;
+                }
                 addAlert(profile_values, "Lower grow limit", alert_str);
             }
         }
@@ -431,7 +452,7 @@ map<string,vector<string> > Analyzer::analyzeData(string ur_field, uint64_t *ur_
     map<string, map<string, vector<string> > >::iterator meta_it;
     map<int, vector<double> >::iterator sensor_it;
     map<string, vector<string> > alert_str;
-    
+
     // Find proper iterators
     meta_it = series_meta_data.find(ur_field);
     sensor_it = control[ur_field].find(*ur_id);
@@ -442,9 +463,13 @@ map<string,vector<string> > Analyzer::analyzeData(string ur_field, uint64_t *ur_
     dataLimitCheck(meta_it, ur_field, ur_id, ur_time ,ur_data, alert_str);
     // Grow check
     dataChangeCheck(sensor_it, meta_it, ur_field, ur_id, ur_time, ur_data, alert_str);
+    sensor_it = control[ur_field].find(*ur_id);
 
     // Push new data and do calculation
     rotate( sensor_it->second.begin(), sensor_it->second.begin()+1, sensor_it->second.end());
+     //   for (auto elem: sensor_it->second){
+       ///     cout << elem << ", ";
+        //}
     pushData(ur_time, ur_data, meta_it, sensor_it, "metaData");
     modifyMetaData(ur_field,ur_id,meta_it, sensor_it, "metaData");
 
@@ -455,16 +480,26 @@ map<string,vector<string> > Analyzer::analyzeData(string ur_field, uint64_t *ur_
 
 void Analyzer::sendAlert(map<string, vector<string> > &alert_str, string &ur_field, uint64_t *ur_id, double *ur_time){
     if (alert_str.empty()){
-        cout << "no alert" << endl;
+        if (verbose >= 1){
+            cout << "VERBOSE: No alert detected" << endl;
+        }
         return;
     }
      
     for (auto profile: alert_str){
         for (auto elem: profile.second){
-            cout << "send: " << profile.first << ", " << elem << endl;
+            if (verbose >= 1){
+                cout << "VERBOSE: Send alert: " << profile.first << ", " << elem << endl;
+            }
+            // Clear variable-length fields
+            ur_clear_varlen(alert_template, data_alert);
+            // Set UniRec message values
             ur_set(alert_template, data_alert, F_ID, *ur_id);
             ur_set(alert_template, data_alert, F_TIME, *ur_time);
-            trap_ctx_send(alert_ifc, 0, data_alert, ur_rec_size(alert_template, data_alert));
+            ur_set_string(alert_template, data_alert, F_profile_key, profile.first.c_str());
+            ur_set_string(alert_template, data_alert, F_alert_desc, elem.c_str());
+            ur_set_string(alert_template, data_alert, F_ur_key, ur_field.c_str());
+            trap_ctx_send(alert_ifc, 0, data_alert, ur_rec_size(alert_template, data_alert) );
             //trap_ctx_send_flush(alert_ifc,0);
         }
     }
@@ -481,7 +516,9 @@ void Analyzer::periodicCheck(int period,  string ur_field){
         if (result - stoi(meta_it->second["metaData"][LAST_TIME]) > period ){
             map<string,vector<string> > alert_str;
             // Alert data hasn't been received
-            cout << "ALERT: data period" << endl;
+            if (verbose >= 0){
+                cout << "VERBOSE: ALERT: data period" << endl;
+            }
             addAlert(ur_field, "Periodic check", alert_str);
             uint64_t ur_id = stoi(meta_it->second["metaProfile"][ID],nullptr);
             double ur_time = stod(meta_it->second["metaData"][LAST_TIME],nullptr);
@@ -494,24 +531,30 @@ void Analyzer::periodicExport(int period, string ur_field){
 
     map<string, map<string, vector<string> > >::iterator meta_it;
     meta_it = series_meta_data.find(ur_field);
-    cout << "PERIODIC EXPORT " << ur_field << endl;
+    if (verbose >= 0){
+        cout << "VERBOSE: Periodic export " << ur_field << endl;
+    }
     while (true){
         sleep (period);
         for (auto elem: ur_export_fields){
             for (auto field: elem.second){
                 // Set unirec record 
                 if (field == "average"){
+                    //!!!REMOVE
                     cout << "ADD AVERAGE " << stod(meta_it->second["metaData"][AVERAGE],nullptr) << endl;
                     ur_set(export_template[elem.first], data_export[elem.first], F_average, stod(meta_it->second["metaData"][AVERAGE],nullptr));
                 } else if (field == "variance") {
+                    //!!!REMOVE
                     cout << "ADD VARIANCE: " << stod(meta_it->second["metaData"][VARIANCE],nullptr) <<  endl;
                     ur_set(export_template[elem.first], data_export[elem.first], F_variance, stod(meta_it->second["metaData"][VARIANCE],nullptr));
 
                 } else if (field == "median"){
+                    //!!!REMOVE
                     cout << "ADD MEDIAN" << endl;
                     ur_set(export_template[elem.first], data_export[elem.first], F_median, stod(meta_it->second["metaData"][MEDIAN],nullptr));
 
                 } else if (field == "cum_average"){
+                    //!!!REMOVE
                     cout << "ADD CUM_AVERAGE " << stod(meta_it->second["metaData"][CUM_AVERAGE],nullptr) << endl;
                     ur_set(export_template[elem.first], data_export[elem.first], F_cum_average, stod(meta_it->second["metaData"][CUM_AVERAGE],nullptr));
 
@@ -556,15 +599,19 @@ void Analyzer::processSeries(string ur_field, uint64_t *ur_id, double *ur_time, 
     *  5 - ignore phase
     */
     init_state = initSeries(ur_field, ur_id, ur_data, ur_time);
-    if (init_state != 1){
-        printSeries(ur_field);
-    }
     
     if (init_state == 0){ 
         // Analyze data series
+        if (verbose >= 0){
+            cout << "VERBOSE: Analyzing phase" << endl;
+        }
         auto alert_str = analyzeData(ur_field, ur_id, ur_data, ur_time);
         sendAlert(alert_str, ur_field, ur_id, ur_time);
         runThreads(ur_field);
+    }
+
+    if (init_state != 1 && verbose >= 0){
+        printSeries(ur_field);
     }
 }
 /* 

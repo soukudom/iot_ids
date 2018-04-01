@@ -112,6 +112,12 @@
 #define F_variance_T   double
 #define F_writeCount   53
 #define F_writeCount_T   double
+#define F_alert_desc   54
+#define F_alert_desc_T   char
+#define F_profile_key   55
+#define F_profile_key_T   char
+#define F_ur_key   56
+#define F_ur_key_T   char
 
 extern uint16_t ur_last_id;
 extern ur_static_field_specs_t UR_FIELD_SPECS_STATIC;

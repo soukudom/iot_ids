@@ -32,7 +32,7 @@ public:
     * Param constructor. Initialize configuration data
     * \param[in] meta_data Parse configuration data by ConfigParser class
     */
-    Analyzer(map<string, map<string, vector<string> > > meta_data);
+    Analyzer(map<string, map<string, vector<string> > > meta_data, int verbose);
 
     // Default destructor
     virtual ~Analyzer();
@@ -70,6 +70,7 @@ private:
     trap_ctx_t *alert_ifc;          // Alert trap interface
     ur_template_t *alert_template;  // Unirec template for alert interface
     void *data_alert;               // Unirec allocated records for alert interface
+    int verbose;                    // Verbose level
 
     trap_ctx_t *export_ifc;                                  // Export trap interface
     ur_template_t **export_template;                         // Unirec templates for export interfaces
@@ -116,7 +117,7 @@ private:
     * \param[in] sensor_it Iterator pointing to specific data in control structure
     * \param[in] meta_id Flag switching between based (established during init) and right now profile
     */
-    void modifyMetaData(string &ur_field, uint64_t *ur_id, map<string, map<string, vector<string> > >::iterator &meta_it, map<int, vector<double> >::iterator &sensor_it, string meta_id);
+    void modifyMetaData(string &ur_field, uint64_t *ur_id, map<string, map<string, vector<string> > >::iterator &meta_it, map<int, vector<double> >::iterator sensor_it, string meta_id);
 
     /**
     * Push data to the control structure
