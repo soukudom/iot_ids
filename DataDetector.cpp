@@ -64,10 +64,10 @@ void printSeries( map<string,map<string, vector<string> > >& series_meta_data){
 * \param[out] ctx_export Export trap interfaces
 * \param[out] data_export Unirec allocated records for export interfaces
 * \param[out] ur_export_fields Map of unirec keys for each interface
+* \param[in] verbose Verbose level
 * \returns Result of initialization. 0 and 1 is success. Other values are errors.
 */
-//!!!int initExportInterfaces(map<string, map<string, vector<string> > > &series_meta_data,  ur_template_t *** export_template, trap_ctx_t **ctx_export, void ***data_export, map<int,pair<string, vector<string> > > &ur_export_fields){
-int initExportInterfaces(map<string, map<string, vector<string> > > &series_meta_data,  ur_template_t *** export_template, trap_ctx_t **ctx_export, void ***data_export, map<int, vector<string>  > &ur_export_fields){
+int initExportInterfaces(map<string, map<string, vector<string> > > &series_meta_data,  ur_template_t *** export_template, trap_ctx_t **ctx_export, void ***data_export, map<int, vector<string>  > &ur_export_fields, int verbose){
     string interface_spec;      // Name of output interface
     int flag = 0;               // Flag for definig output interface name
     vector<string> field_name;  // Tmp value for export ur_values
@@ -94,12 +94,14 @@ int initExportInterfaces(map<string, map<string, vector<string> > > &series_meta
                         interface_spec += "u:export-"+main_key.first+",";
                         number_of_keys++;
                         flag = 1;
+                        if (verbose >= 0 ){
+                            cout << "VERBOSE: Creating export interface: u:export-" << main_key.first << endl; 
+                        }
                     }
                 }   
                 // Insert tmp variables to the map structure
                 if (flag == 1){
                     //pair <string, vector<string> > tmp(main_key.first,field_name); 
-                    //!!!ur_export_fields.insert(pair<int,pair<string, vector<string> > >(number_of_keys-1, tmp));
                     ur_export_fields.insert(pair<int, vector<string> >(number_of_keys-1, field_name));
                 }
             }
@@ -143,7 +145,6 @@ int initExportInterfaces(map<string, map<string, vector<string> > > &series_meta
         // Clear old value in tmp variable
         tmp_ur_export.clear();
         // Create unirec export format
-        //!!!for (auto elem: ur_export_fields[i].second){
         for (auto elem: ur_export_fields[i]){
             tmp_ur_export += elem + ",";
         }
@@ -180,7 +181,6 @@ int main (int argc, char** argv){
     int verbose = 0;                                          // Verbose level
     void *data_alert = NULL;                                  // Unirec output alert record
     void **data_export = NULL;                                // Unirec output export record
-    //!!!map<int,pair<string, vector<string> > > ur_export_fields; // Map with unirec values for each interface. The first key is number of interface and the second is name of record according to the configuration file (ur_field). In the last vector are profile items for export.
     map<int, vector<string> > ur_export_fields; // Map with unirec values for each interface. The first key is number of interface and the second is name of record according to the configuration file (ur_field). In the last vector are profile items for export.
 
     int ret = 2;                                              // Tmp store variable
@@ -239,7 +239,7 @@ int main (int argc, char** argv){
     }
 
     if (verbose >= 0) {
-        cout << "Initializing TRAP library ..." << endl;
+        cout << "VERBOSE: Initializing TRAP library ..." << endl;
     }
 
     ctx = trap_ctx_init(module_info, ifc_spec);
@@ -278,7 +278,7 @@ int main (int argc, char** argv){
     }
     
     // Initialize export output interfaces
-    ret = initExportInterfaces(series_meta_data, &export_template, &ctx_export, &data_export, ur_export_fields);
+    ret = initExportInterfaces(series_meta_data, &export_template, &ctx_export, &data_export, ur_export_fields,verbose);
     if (ret > 1){
         exit_value=2;
         goto cleanup;
@@ -293,7 +293,7 @@ int main (int argc, char** argv){
         }
 
     if (verbose >= 0) {
-        cout << "Initialization done" << endl;
+        cout << "VERBOSE: Initialization done" << endl;
     }
 
     // Set initialized values to Analyze class
@@ -327,6 +327,9 @@ int main (int argc, char** argv){
     }
 
 cleanup:
+    if (verbose >= 0){
+        cout << "VERBOSE: Cleaning allocated structures" << endl;
+    }
     // Clean alocated structures
     trap_ctx_finalize(&ctx);
     trap_ctx_finalize(&ctx_export);
