@@ -21,11 +21,6 @@
 #include "config.h"
 #include "Analyzer.h"
 
-/*
-    TODO
-    testovani scenaru
-*/
-
 using namespace std;
 
 trap_module_info_t *module_info = NULL;
@@ -318,6 +313,10 @@ int main (int argc, char** argv){
             // Skip id -> not analyzed just used for alert identification
             if ( strcmp("ID",(ur_get_name(id))) == 0 ){
                 continue;
+            }
+
+            if (verbose >= 2){
+                cout << "VERBOSE: Received UniRec message with the record name" << ur_id << endl;
             }
             ur_data = (double*) ur_get_ptr_by_id(in_template, data_nemea_input,id);
             // Analyze received data
