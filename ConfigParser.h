@@ -16,7 +16,7 @@
 using namespace std;
 
 // Number of values in meta structure
-#define DYNAMIC 12
+#define DYNAMIC 14
 
 /* 
  The following enums are used for accessing the created structures after parsing the configuraiton file.  
@@ -29,7 +29,7 @@ enum localValues {SOFT_MIN, SOFT_MAX, HARD_MIN, HARD_MAX, SOFT_PERIOD, GROW_UP, 
 enum general {SERIES_LENGTH, LEARNING_LENGTH, IGNORE_LENGTH, STORE_MODE, PERIODIC_CHECK, EXPORT_INTERVAL};
 
 // Parameters and fields used in analyse process
-enum meta {AVERAGE, VARIANCE, MEDIAN, CUM_AVERAGE, SX, SX2, PREV_VALUE, NEW_VALUE, LAST_TIME, ROTATE, CHECKED_FLAG, ID};
+enum meta {AVERAGE, VARIANCE, MEDIAN, CUM_AVERAGE, SX, SX2, PREV_VALUE, NEW_VALUE, LAST_TIME, ROTATE, CHECKED_FLAG, ID, OLDEST_VALUE};
 
 /*
  Parse file with configuration of unirec field.

@@ -80,6 +80,7 @@ private:
     map<string, map<string, vector<string> > > series_meta_data; // Parsed data from configuration file by ConfigParser. Data sequence: unirec field, subsection category (profile, profile items, export, general, metaData, metaProfile, profile), config params
     map<string, map<int, vector<double> > > control;             // Structure for time series data. Data sequence: unirec field, sensor ID, data series values
 
+    map<string, map<int, vector<double> > > median_window; // Structure for median
     /*
     * Buffers for moving variance
     */
@@ -128,7 +129,7 @@ private:
     * \param[in] meta_id Flag switching between based (established during init) and right now profile
     * \returns The new pushed value
     */
-    double pushData(double *ur_time, double *ur_data, map<string, map<string, vector<string> > >::iterator &meta_it, map<int, vector<double> >::iterator &sensor_it, string meta_id);
+    pair<double,double> pushData(double *ur_time, double *ur_data, map<string, map<string, vector<string> > >::iterator &meta_it, map<int, vector<double> >::iterator &sensor_it, string meta_id);
 
     /**
     * Get unirec field index for profile name
@@ -163,7 +164,7 @@ private:
     * \param[in] sensor_it Iterator pointing to specific data in control structure
     * \returns Median value
     */
-    double getMedian(map<int,vector<double> >::iterator &sensor_it);
+    double getMedian(map<int,vector<double> >::iterator &sensor_it, map<string,map<string,vector<string> > >::iterator &meta_it, string &ur_field);
 
     /**
     * Get moving average and variance from data series

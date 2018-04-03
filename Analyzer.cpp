@@ -35,17 +35,46 @@ void Analyzer::setExportInterface(trap_ctx_t *export_ifc, ur_template_t **export
 /* 
  * BEGIN CALCALULATION METHODS
  */
-double Analyzer::getMedian(map<int,vector<double> >::iterator &sensor_it){
+double Analyzer::getMedian(map<int,vector<double> >::iterator &sensor_it, map<string,map<string, vector<string> > >::iterator &meta_it, string &ur_field){
     // Basic non-moving median calculation
-    double median = 0;
-    size_t size = sensor_it->second.size();
 
-    sort(sensor_it->second.begin(), sensor_it->second.end());
+    // First value exception
+    if (sensor_it->second.size() == 1){
+        return sensor_it->second.back();
+    }
+    int series_length = stoi (meta_it->second["general"][SERIES_LENGTH],nullptr);
+    double new_value = stod (meta_it->second["metaData"][NEW_VALUE],nullptr);
+    double old_value = stod (meta_it->second["metaData"][OLDEST_VALUE],nullptr);
+    double median = 0;
+    int index = 0;
+
+    // Insert the new value
+    if (series_length > median_window[ur_field][sensor_it->first].size()){
+        // Push back
+        median_window[ur_field][sensor_it->first].push_back(new_value);
+    } else {
+        // Vector is full -> replace the oldest value
+        index = 0;
+        for (auto elem: median_window[ur_field][sensor_it->first]){
+            if (elem == old_value){
+                median_window[ur_field][sensor_it->first][index] = new_value;
+                break;
+            }
+            index++;
+        }        
+    }
+
+    // Calculate median value
+    size_t size = median_window[ur_field][sensor_it->first].size();
+
+    // Sort modified vector by the new value
+    sort(median_window[ur_field][sensor_it->first].begin(), median_window[ur_field][sensor_it->first].end());
+
     if (size  % 2 == 0) {
-        median = (sensor_it->second[size / 2 - 1] + sensor_it->second[size / 2]) / 2;
+        median = (median_window[ur_field][sensor_it->first][size / 2 - 1] + median_window[ur_field][sensor_it->first][size / 2]) / 2;
     }
     else {
-        median = sensor_it->second[size / 2]; 
+        median = median_window[ur_field][sensor_it->first][size / 2]; 
     }
     return median;
 }
@@ -122,8 +151,9 @@ pair<double, double> Analyzer::getAverageAndVariance(string &ur_field, uint64_t 
  */
 
 // Store data in data series based on configured values
-double Analyzer::pushData(double *ur_time, double *ur_data, map<string, map<string, vector<string> > >::iterator &meta_it, map<int, vector<double> >::iterator &sensor_it, string meta_id){
+pair<double, double> Analyzer::pushData(double *ur_time, double *ur_data, map<string, map<string, vector<string> > >::iterator &meta_it, map<int, vector<double> >::iterator &sensor_it, string meta_id){
     double new_value = 0;
+    double old_value = 0;
     string store_mode = meta_it->second["general"][STORE_MODE];
     int series_length = stoi (meta_it->second["general"][SERIES_LENGTH],nullptr);
 
@@ -145,17 +175,20 @@ double Analyzer::pushData(double *ur_time, double *ur_data, map<string, map<stri
     if (series_length > sensor_it->second.size()){
         // Push back
         sensor_it->second.push_back(new_value);        
+        old_value = sensor_it->second[0];
     } else {
-        //back()
+        //back() -> vector is full
+        old_value = sensor_it->second.back();
         sensor_it->second.back() = new_value;
     }
     // New value field is useful just for alert detection methods -> not relevant in metaProfile
     meta_it->second["metaData"][NEW_VALUE] = to_string(new_value);
     meta_it->second["metaData"][LAST_TIME] = to_string(*ur_time);
+    meta_it->second["metaData"][OLDEST_VALUE] = to_string(old_value);
     if (verbose >= 0){
         cout << "VERBOSE: New data pushed: " << new_value << endl;
     }
-    return new_value;
+    return pair<double, double>(new_value, old_value);
 }
 
 void Analyzer::modifyMetaData(string &ur_field, uint64_t *ur_id ,map<string, map<string, vector<string> > >::iterator &meta_it, map<int, vector<double> >::iterator sensor_it, string meta_id){
@@ -165,7 +198,7 @@ void Analyzer::modifyMetaData(string &ur_field, uint64_t *ur_id ,map<string, map
     for (auto profile_values:  meta_it->second["profile"]){
         if ( profile_values == "median" ){
             // Median method
-            meta_it->second[meta_id][MEDIAN] = to_string(getMedian(sensor_it));
+            meta_it->second[meta_id][MEDIAN] = to_string(getMedian(sensor_it,meta_it,ur_field));
         } else if (profile_values == "average" || profile_values == "variance") {
             // Moving varinace and average method
             // Skip unnecessary calls
