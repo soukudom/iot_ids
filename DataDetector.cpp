@@ -264,7 +264,7 @@ int main (int argc, char** argv){
         goto cleanup;
     }
     // Create alert template
-    alert_template = ur_ctx_create_output_template(ctx, 0, "ID,TIME,ur_key,alert_desc,profile_key", NULL);
+    alert_template = ur_ctx_create_output_template(ctx, 0, "ID,TIME,ur_key,alert_desc,profile_key,err_value,profile_value", NULL);
     if (alert_template == NULL) {
         cerr <<  "ERROR: unirec alert template create fail" << endl;
         exit_value=2;

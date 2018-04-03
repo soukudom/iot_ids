@@ -18,6 +18,7 @@ char *ur_field_names_static[] = {
    "CANCount",
    "cum_average",
    "dropped",
+   "err_value",
    "GW_ID",
    "ID",
    "lastRequestRTT",
@@ -30,6 +31,7 @@ char *ur_field_names_static[] = {
    "nonDelivery",
    "notIdle",
    "OOFCount",
+   "profile_value",
    "quality",
    "readAborts",
    "readCount",
@@ -77,6 +79,7 @@ short ur_field_sizes_static[] = {
    8, /* CANCount */
    8, /* cum_average */
    8, /* dropped */
+   8, /* err_value */
    8, /* GW_ID */
    8, /* ID */
    8, /* lastRequestRTT */
@@ -89,6 +92,7 @@ short ur_field_sizes_static[] = {
    8, /* nonDelivery */
    8, /* notIdle */
    8, /* OOFCount */
+   8, /* profile_value */
    8, /* quality */
    8, /* readAborts */
    8, /* readCount */
@@ -136,6 +140,7 @@ ur_field_type_t ur_field_types_static[] = {
    UR_TYPE_DOUBLE, /* CANCount */
    UR_TYPE_DOUBLE, /* cum_average */
    UR_TYPE_DOUBLE, /* dropped */
+   UR_TYPE_DOUBLE, /* err_value */
    UR_TYPE_UINT64, /* GW_ID */
    UR_TYPE_UINT64, /* ID */
    UR_TYPE_DOUBLE, /* lastRequestRTT */
@@ -148,6 +153,7 @@ ur_field_type_t ur_field_types_static[] = {
    UR_TYPE_DOUBLE, /* nonDelivery */
    UR_TYPE_DOUBLE, /* notIdle */
    UR_TYPE_DOUBLE, /* OOFCount */
+   UR_TYPE_DOUBLE, /* profile_value */
    UR_TYPE_DOUBLE, /* quality */
    UR_TYPE_DOUBLE, /* readAborts */
    UR_TYPE_DOUBLE, /* readCount */
@@ -179,5 +185,5 @@ ur_field_type_t ur_field_types_static[] = {
    UR_TYPE_STRING, /* profile_key */
    UR_TYPE_STRING, /* ur_key */
 };
-ur_static_field_specs_t UR_FIELD_SPECS_STATIC = {ur_field_names_static, ur_field_sizes_static, ur_field_types_static, 57};
-ur_field_specs_t ur_field_specs = {ur_field_names_static, ur_field_sizes_static, ur_field_types_static, 57, 57, 57, NULL, UR_UNINITIALIZED};
+ur_static_field_specs_t UR_FIELD_SPECS_STATIC = {ur_field_names_static, ur_field_sizes_static, ur_field_types_static, 59};
+ur_field_specs_t ur_field_specs = {ur_field_names_static, ur_field_sizes_static, ur_field_types_static, 59, 59, 59, NULL, UR_UNINITIALIZED};

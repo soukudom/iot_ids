@@ -1,3 +1,9 @@
+##### CONFIG FILE PARAMETERS DESCRIPTION #####
+UniRec field name
+:
+Time series length;
+;
+
 #UR_FIELD  PARAM1, PARAM2, ...
         #soft_min_value, soft_max_value, hard_min_value, hard_max_value, soft_value_period
         #data_change_up, data_change_down, data_change_mode (average, last_value), 
@@ -29,5 +35,11 @@
 #TIME: 3;5;delta;3;-;profile(average,variance,median,cum_average,new_value,);average(1,5,-10,10,5,2,0.2,-,0,0,);variance(0,10,0,20,5,3,0.3,0,0,0,);median(1,5,-10,10,5,2,0.2,-,0,0,);cum_average(1,5,-10,10,5,2,0.2,-,0,0,);new_value(10,13,2,15,2,-,-,-,0,0,);export(-,);
 
 #### Z-WAVE ####
-TIME: 3;5;0;delta;15;5;profile(average,variance,cum_average,median,);average(1,20,-10,25,5,2,0.2,0,0,);variance(0,10,0,20,5,3,0.3,0,0,);median(1,20,-10,25,5,2,0.2,0,0,);cum_average(1,20,-10,25,5,2,0.2,0,0,);new_value(-,-,-,-,-,-,-,0,0,);export(average,);
-SOAFCount: 3;5;3;delta;-;-;profile(average,);average(0,6,-1,10,5,2,0.2,0,0,);variance(-,-,-,-,-,-,-,0,0,);cum_average(-,-,-,-,-,-,-,0,0,);new_value(-,-,-,-,-,-,-,0,0,);export(-,);
+#TIME: 3;5;0;delta;15;5;profile(average,variance,cum_average,median,);average(1,20,-10,25,5,2,0.2,0,0,);variance(0,10,0,20,5,3,0.3,0,0,);median(1,20,-10,25,5,2,0.2,0,0,);cum_average(1,20,-10,25,5,2,0.2,0,0,);new_value(-,-,-,-,-,-,-,0,0,);export(average,);
+#SOAFCount: 3;5;3;delta;-;-;profile(average,);average(0,6,-1,10,5,2,0.2,0,0,);variance(-,-,-,-,-,-,-,0,0,);cum_average(-,-,-,-,-,-,-,0,0,);new_value(-,-,-,-,-,-,-,0,0,);export(-,);
+
+#### TESTS ####
+## TEST1: DoS##
+SOAFCount: 10;12;11;delta;-;-;profile(average,variance,median,cum_average,);average(-,-,-,-,-,5,0.2,0,0,);variance(-,-,-,-,-,5,0.2,0,0,);cum_average(-,-,-,-,-,5,0.2,0,0,);median(-,-,-,-,-,5,0.2,0,0,);export(-,);
+## TEST2: DoS##
+## TEST3: DoS##

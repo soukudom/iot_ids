@@ -518,17 +518,28 @@ void Analyzer::sendAlert(map<string, vector<string> > &alert_str, string &ur_fie
         }
         return;
     }
+    
+    map<string, map<string, vector<string> > >::iterator meta_it;
+    meta_it = series_meta_data.find(ur_field);
+    double err_value = 0;
+    double profile_value = 0;
      
     for (auto profile: alert_str){
         for (auto elem: profile.second){
             if (verbose >= 1){
                 cout << "VERBOSE: Send alert: " << profile.first << ", " << elem << endl;
             }
+
+            err_value = stod(meta_it->second["metaData"][getIndex(profile.first)],nullptr);
+            profile_value = stod(meta_it->second["metaProfile"][getIndex(profile.first)],nullptr);
+
             // Clear variable-length fields
             ur_clear_varlen(alert_template, data_alert);
             // Set UniRec message values
             ur_set(alert_template, data_alert, F_ID, *ur_id);
             ur_set(alert_template, data_alert, F_TIME, *ur_time);
+            ur_set(alert_template, data_alert, F_err_value, err_value);
+            ur_set(alert_template, data_alert, F_profile_value, profile_value);
             ur_set_string(alert_template, data_alert, F_profile_key, profile.first.c_str());
             ur_set_string(alert_template, data_alert, F_alert_desc, elem.c_str());
             ur_set_string(alert_template, data_alert, F_ur_key, ur_field.c_str());
