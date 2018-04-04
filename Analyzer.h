@@ -10,6 +10,7 @@
 #include <vector>
 #include <algorithm>
 #include <iostream>
+#include <sstream>
 #include <libtrap/trap.h>
 #include <unirec/unirec.h>
 #include "fields.h"
@@ -78,14 +79,14 @@ private:
     map<int,vector<string> >ur_export_fields; // Map with unirec values for each interface. The first key is number of interface and the second is name of record according to the configuration file (ur_field). In the last vector are profile items for export.
 
     map<string, map<string, vector<string> > > series_meta_data; // Parsed data from configuration file by ConfigParser. Data sequence: unirec field, subsection category (profile, profile items, export, general, metaData, metaProfile, profile), config params
-    map<string, map<int, vector<double> > > control;             // Structure for time series data. Data sequence: unirec field, sensor ID, data series values
+    map<string, map<uint64_t, vector<double> > > control;             // Structure for time series data. Data sequence: unirec field, sensor ID, data series values
 
-    map<string, map<int, vector<double> > > median_window; // Structure for median
+    map<string, map<uint64_t, vector<double> > > median_window; // Structure for median
     /*
     * Buffers for moving variance
     */
-    map<string, map<int, vector<double> > > x;  // Buffer for normal values
-    map<string, map<int, vector<double> > > x2; // Buffer for square values
+    map<string, map<uint64_t, vector<double> > > x;  // Buffer for normal values
+    map<string, map<uint64_t, vector<double> > > x2; // Buffer for square values
 
 /*
 * Internal methods. Used during processing time series.  
@@ -118,7 +119,7 @@ private:
     * \param[in] sensor_it Iterator pointing to specific data in control structure
     * \param[in] meta_id Flag switching between based (established during init) and right now profile
     */
-    void modifyMetaData(string &ur_field, uint64_t *ur_id, map<string, map<string, vector<string> > >::iterator &meta_it, map<int, vector<double> >::iterator sensor_it, string meta_id);
+    void modifyMetaData(string &ur_field, uint64_t *ur_id, map<string, map<string, vector<string> > >::iterator &meta_it, map<uint64_t, vector<double> >::iterator sensor_it, string meta_id);
 
     /**
     * Push data to the control structure
@@ -129,7 +130,7 @@ private:
     * \param[in] meta_id Flag switching between based (established during init) and right now profile
     * \returns The new pushed value
     */
-    pair<double,double> pushData(double *ur_time, double *ur_data, map<string, map<string, vector<string> > >::iterator &meta_it, map<int, vector<double> >::iterator &sensor_it, string meta_id);
+    pair<double,double> pushData(double *ur_time, double *ur_data, map<string, map<string, vector<string> > >::iterator &meta_it, map<uint64_t, vector<double> >::iterator &sensor_it, string meta_id);
 
     /**
     * Get unirec field index for profile name
@@ -164,7 +165,7 @@ private:
     * \param[in] sensor_it Iterator pointing to specific data in control structure
     * \returns Median value
     */
-    double getMedian(map<int,vector<double> >::iterator &sensor_it, map<string,map<string,vector<string> > >::iterator &meta_it, string &ur_field);
+    double getMedian(map<uint64_t,vector<double> >::iterator &sensor_it, map<string,map<string,vector<string> > >::iterator &meta_it, string &ur_field);
 
     /**
     * Get moving average and variance from data series
@@ -175,7 +176,7 @@ private:
     * \param[in] meta_id Flag switching between based (established during init) and right now profile
     * \returns Pair<average, variance>
     */
-    pair<double, double> getAverageAndVariance(string &ur_field, uint64_t *ur_id, map<string,map<string, vector<string> > >::iterator &meta_it, map<int,vector<double> >::iterator &sensor_it, string meta_id);
+    pair<double, double> getAverageAndVariance(string &ur_field, uint64_t *ur_id, map<string,map<string, vector<string> > >::iterator &meta_it, map<uint64_t,vector<double> >::iterator &sensor_it, string meta_id);
 
     /**
     * Get cumulatie moving average from data series
@@ -184,7 +185,7 @@ private:
     * \param[in] meta_id Flag switching between based (established during init) and right now profile
     * \returns Cumulative average value
     */
-    double getCumulativeAverage(map<int,vector<double> >::iterator &sensor_it, map<string, map<string, vector<string> > >::iterator &meta_it, string meta_id);
+    double getCumulativeAverage(map<uint64_t,vector<double> >::iterator &sensor_it, map<string, map<string, vector<string> > >::iterator &meta_it, string meta_id);
 
     /**
     * Print series data and meta information
@@ -216,7 +217,7 @@ private:
     * \param[in] ur_data Value of ur_field
     * \param[in] alert_str Structure for storing all alerts
     */
-    void dataChangeCheck(map<int,vector<double> >::iterator &sensor_it, map<string, map<string, vector<string> > >::iterator &meta_it, string ur_field, uint64_t *ur_id, double *ur_time ,double *ur_data, map<string,vector<string> > & alert_str);
+    void dataChangeCheck(map<uint64_t,vector<double> >::iterator &sensor_it, map<string, map<string, vector<string> > >::iterator &meta_it, string ur_field, uint64_t *ur_id, double *ur_time ,double *ur_data, map<string,vector<string> > & alert_str);
 
     /**
     * Thread member functions

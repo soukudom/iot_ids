@@ -1,8 +1,8 @@
 ##### CONFIG FILE PARAMETERS DESCRIPTION #####
-UniRec field name
-:
-Time series length;
-;
+#UniRec field name
+#:
+#Time series length;
+#;
 
 #UR_FIELD  PARAM1, PARAM2, ...
         #soft_min_value, soft_max_value, hard_min_value, hard_max_value, soft_value_period
@@ -39,7 +39,16 @@ Time series length;
 #SOAFCount: 3;5;3;delta;-;-;profile(average,);average(0,6,-1,10,5,2,0.2,0,0,);variance(-,-,-,-,-,-,-,0,0,);cum_average(-,-,-,-,-,-,-,0,0,);new_value(-,-,-,-,-,-,-,0,0,);export(-,);
 
 #### TESTS ####
+#######################
 ## TEST1: DoS##
-SOAFCount: 10;12;11;delta;-;-;profile(average,variance,median,cum_average,);average(-,-,-,-,-,5,0.2,0,0,);variance(-,-,-,-,-,5,0.2,0,0,);cum_average(-,-,-,-,-,5,0.2,0,0,);median(-,-,-,-,-,5,0.2,0,0,);export(-,);
+#SOAFCount: 10;12;11;delta;-;-;-;profile(average,variance,median,cum_average,);average(-,-,-,-,-,5,0.2,0,0,);variance(-,-,-,-,-,5,0.2,0,0,);cum_average(-,-,-,-,-,5,0.2,0,0,);median(-,-,-,-,-,5,0.2,0,0,);export(-,);
 ## TEST2: DoS##
+#!!!receivedCount: 10;12;11;delta;-;-;-;profile(average,variance,median,cum_average,);average(-,-,-,-,-,5,0.2,0,0,);variance(-,-,-,-,-,5,0.2,0,0,);cum_average(-,-,-,-,-,5,0.2,0,0,);median(-,-,-,-,-,5,0.2,0,0,);export(-,);
 ## TEST3: DoS##
+#rxBytes: 5;8;0;delta;-;-;-;profile(average,variance,median,cum_average,);average(-,-,-,-,-,2,0.5,0,0,);variance(-,-,-,-,-,2,0.5,0,0,);cum_average(-,-,-,-,-,2,0.5,0,0,);median(-,-,-,-,-,2,0.5,0,0,);export(-,);
+#######################
+## TEST4: Periodic ##
+#VALUE: 5;5;0;simple;8;-;-;profile(median,);median(-,-,-,-,-,5,0.2,0,0,);export(-,);
+## TEST5: Periodic ##
+#rxEvents: 5;8;0;simple;7;5;-;profile(variance,);variance(-,-,-,-,-,2,0.5,0,0,);export(-,);
+
