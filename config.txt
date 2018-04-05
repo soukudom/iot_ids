@@ -45,11 +45,24 @@
 ## TEST2: DoS##
 #receivedCount;2: 10;12;5;delta;-;-;-;profile(average,variance,median,cum_average,);average(-,-,-,-,-,5,0.2,0,0,);variance(-,-,-,-,-,5,0.2,0,0,);cum_average(-,-,-,-,-,5,0.2,0,0,);median(-,-,-,-,-,5,0.2,0,0,);export(-,);
 ## TEST3: DoS##
-rxBytes: 5;8;0;delta;-;-;-;profile(average,variance,median,cum_average,);average(-,-,-,-,-,2,0.5,0,0,);variance(-,-,-,-,-,2,0.5,0,0,);cum_average(-,-,-,-,-,2,0.5,0,0,);median(-,-,-,-,-,2,0.5,0,0,);export(-,);
+#rxBytes: 5;8;0;delta;-;-;-;profile(average,variance,median,cum_average,);average(-,-,-,-,-,2,0.5,0,0,);variance(-,-,-,-,-,2,0.5,0,0,);cum_average(-,-,-,-,-,2,0.5,0,0,);median(-,-,-,-,-,2,0.5,0,0,);export(-,);
 #######################
 ## TEST4: Periodic ##
 #VALUE: 5;5;0;simple;8;-;-;profile(median,);median(-,-,-,-,-,5,0.2,0,0,);export(-,);
 ## TEST5: Periodic ##
 #rxEvents: 5;8;0;simple;7;5;-;profile(variance,);variance(-,-,-,-,-,2,0.5,0,0,);export(-,);
 #######################
+## TEST5: Data Limits ##
+#VALUE: 8;8;0;simple;-;-;-;profile(average,variance,median,cum_average,);average(4,10,2,12,5,-,-,0,0,);variance(10,18,5,25,5,-,-,0,0,);cum_average(4,10,2,12,5,-,-,0,0,);median(4,10,2,12,5,-,-,0,0,);export(-,);
+#######################
+## TEST6: Signal quality ##
+#lastResponseRTT;2: 5;7;5;simple;-;-;-;profile(average,);average(-,-,-,-,-,2,0.5,0,0,);export(-,);
+#dropped;1101: 1;1;10;delta;-;-;-;profile(median,);median(-,-,-1,1,-,-,-,0,0,);export(-,);
+#######################
+## TEST7: Periodic Export ##
+#rxBytes: 3;3;0;simple;-;-;5;profile(average,variance,median,cum_average,);average(-,-,-,-,-,2,0.5,0,0,);variance(-,-,-,-,-,2,0.5,0,0,);cum_average(-,-,-,-,-,2,0.5,0,0,);median(-,-,-,-,-,2,0.5,0,0,);export(average,variance,median,cum_average,);
+## TEST8: Periodic Export ##
+#rxBytes: 3;3;0;simple;-;-;5;profile(variance,);average(-,-,-,-,-,2,0.5,0,0,);variance(-,-,-,-,-,2,0.5,0,0,);cum_average(-,-,-,-,-,2,0.5,0,0,);median(-,-,-,-,-,2,0.5,0,0,);export(variance,);
+## TEST9: Periodic Export ##
+receivedCount;2: 3;3;0;delta;-;-;5;profile(cum_average,);cum_average(-,-,-,-,-,5,0.2,0,0,);export(cum_average,);
 

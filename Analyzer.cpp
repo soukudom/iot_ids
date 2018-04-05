@@ -230,6 +230,9 @@ int Analyzer::initSeries(string &ur_field, uint64_t *ur_id, double *ur_data, dou
         // Test if meta information with the proper ID exist
         localID = getMetaID(meta_it,ur_id);
         if (meta_it->second.find(localID) == meta_it->second.end() && localID != 0){
+            if (verbose >= 1){
+                cout << "VERBOSE: ignore field with id: " << localID << endl; 
+            }
             return 6; 
         }
         // Cast necessary meta info values
@@ -454,7 +457,10 @@ void Analyzer::dataLimitCheck(map<string, map<uint64_t, map<string, vector<strin
             }
         // Test if hard limits are set
         // Hard min, max limits are dependent -> test for hard min is ok
-        } else if (meta_it->second[getMetaID(meta_it,ur_id)][profile_values][HARD_MIN] != "-"){
+        //} else if (meta_it->second[getMetaID(meta_it,ur_id)][profile_values][HARD_MIN] != "-"){
+        } 
+
+        if (meta_it->second[getMetaID(meta_it,ur_id)][profile_values][HARD_MIN] != "-"){
             // Hard limit test
             // Hard limit min
             if (stod(meta_it->second[getMetaID(meta_it,ur_id)]["metaData"][getIndex(profile_values)],nullptr)  < stod(meta_it->second[getMetaID(meta_it,ur_id)][profile_values][HARD_MIN],nullptr) ){
@@ -594,13 +600,13 @@ void Analyzer::periodicCheck(int period,  string ur_field, uint64_t *ur_id){
     map<string, map<uint64_t, map<string, vector<string> > > >::iterator meta_it;
     meta_it = series_meta_data.find(ur_field);
     double change_period = 0;
-    //uint64_t ur_id = 0;
+    uint64_t data_id = *ur_id;
     double ur_time = 0;
 
     while(true){
         sleep(period);
         int result = std::time(nullptr);
-        if (result - stoi(meta_it->second[getMetaID(meta_it,ur_id)]["metaData"][LAST_TIME]) > period ){
+        if (result - stoi(meta_it->second[getMetaID(meta_it,&data_id)]["metaData"][LAST_TIME]) > period ){
             map<string,vector<string> > alert_str;
             // Alert -> data hasn't been received
             if (verbose >= 0){
@@ -611,25 +617,25 @@ void Analyzer::periodicCheck(int period,  string ur_field, uint64_t *ur_id){
             /*uint64_t*/ //ur_id = stoi(meta_it->second["metaProfile"][ID],nullptr);
             //istringstream iss(meta_it->second["metaProfile"][ID]);
             //iss >> ur_id;
-            /*double*/ ur_time = stod(meta_it->second[getMetaID(meta_it,ur_id)]["metaData"][LAST_TIME],nullptr);
-            sendAlert(alert_str, ur_field, ur_id, &ur_time);
+            /*double*/ ur_time = stod(meta_it->second[getMetaID(meta_it,&data_id)]["metaData"][LAST_TIME],nullptr);
+            sendAlert(alert_str, ur_field, &data_id, &ur_time);
         }
        
         // Check if periodic data change is enabled
-        if ( meta_it->second[getMetaID(meta_it,ur_id)]["general"][PERIODIC_INTERVAL] != "-"){
+        if ( meta_it->second[getMetaID(meta_it,&data_id)]["general"][PERIODIC_INTERVAL] != "-"){
             // Compare new and previous values
-            if ( stod(meta_it->second[getMetaID(meta_it,ur_id)]["metaData"][NEW_ORIG_VALUE],nullptr) == stod(meta_it->second[getMetaID(meta_it,ur_id)]["metaData"][PREV_VALUE],nullptr) ){
-                change_period = stod(meta_it->second[getMetaID(meta_it,ur_id)]["metaProfile"][CHANGE_PERIOD],nullptr);
+            if ( stod(meta_it->second[getMetaID(meta_it,&data_id)]["metaData"][NEW_ORIG_VALUE],nullptr) == stod(meta_it->second[getMetaID(meta_it,&data_id)]["metaData"][PREV_VALUE],nullptr) ){
+                change_period = stod(meta_it->second[getMetaID(meta_it,&data_id)]["metaProfile"][CHANGE_PERIOD],nullptr);
                 change_period++;
-                meta_it->second[getMetaID(meta_it,ur_id)]["metaProfile"][CHANGE_PERIOD] = to_string(change_period);
+                meta_it->second[getMetaID(meta_it,&data_id)]["metaProfile"][CHANGE_PERIOD] = to_string(change_period);
             // In case of difference reset counter
             } else {
-                  meta_it->second[getMetaID(meta_it,ur_id)]["metaProfile"][CHANGE_PERIOD] = to_string(0);
+                  meta_it->second[getMetaID(meta_it,&data_id)]["metaProfile"][CHANGE_PERIOD] = to_string(0);
                   change_period = 0;
             } 
 
             // If counter is higher than specified limit -> send an alert
-            if (change_period > stod(meta_it->second[getMetaID(meta_it,ur_id)]["general"][PERIODIC_INTERVAL],nullptr)){
+            if (change_period > stod(meta_it->second[getMetaID(meta_it,&data_id)]["general"][PERIODIC_INTERVAL],nullptr)){
                 cout << "SEND ALERT" << endl;
                 map<string,vector<string> > alert_str;
                 if (verbose >= 0){
@@ -640,8 +646,8 @@ void Analyzer::periodicCheck(int period,  string ur_field, uint64_t *ur_id){
                 // Contert ID
                 //istringstream iss(meta_it->second["metaProfile"][ID]);
                 //iss >> ur_id;
-                /*double*/ ur_time = stod(meta_it->second[getMetaID(meta_it,ur_id)]["metaData"][LAST_TIME],nullptr);
-                sendAlert(alert_str, ur_field, ur_id, &ur_time);
+                /*double*/ ur_time = stod(meta_it->second[getMetaID(meta_it,&data_id)]["metaData"][LAST_TIME],nullptr);
+                sendAlert(alert_str, ur_field, &data_id, &ur_time);
             }
             
         }
@@ -652,32 +658,34 @@ void Analyzer::periodicExport(int period, string ur_field, uint64_t *ur_id){
 
     map<string, map<uint64_t, map<string, vector<string> > > >::iterator meta_it;
     meta_it = series_meta_data.find(ur_field);
+    uint64_t data_id = *ur_id;
     if (verbose >= 0){
-        cout << "VERBOSE: Periodic export " << ur_field << endl;
+        cout << "VERBOSE: Periodic export " << ur_field <<endl;
     }
     while (true){
         sleep (period);
         for (auto elem: ur_export_fields){
             for (auto field: elem.second){
+                cout << "PERIODIC EXPORT DATA NOW" << endl;
                 // Set unirec record 
                 if (field == "average"){
                     //!!!REMOVE cout descr
                     cout << "ADD AVERAGE " << stod(meta_it->second[getMetaID(meta_it,ur_id)]["metaData"][AVERAGE],nullptr) << endl;
-                    ur_set(export_template[elem.first], data_export[elem.first], F_average, stod(meta_it->second[getMetaID(meta_it,ur_id)]["metaData"][AVERAGE],nullptr));
+                    //ur_set(export_template[elem.first], data_export[elem.first], F_average, stod(meta_it->second[getMetaID(meta_it,ur_id)]["metaData"][AVERAGE],nullptr));
+                    ur_set(export_template[elem.first], data_export[elem.first], F_average, stod(meta_it->second[getMetaID(meta_it,&data_id)]["metaData"][AVERAGE],nullptr));
                 } else if (field == "variance") {
-                    //!!!REMOVE
-                    cout << "ADD VARIANCE: " << stod(meta_it->second[getMetaID(meta_it,ur_id)]["metaData"][VARIANCE],nullptr) <<  endl;
-                    ur_set(export_template[elem.first], data_export[elem.first], F_variance, stod(meta_it->second[getMetaID(meta_it,ur_id)]["metaData"][VARIANCE],nullptr));
+                    //ur_set(export_template[elem.first], data_export[elem.first], F_variance, stod(meta_it->second[getMetaID(meta_it,ur_id)]["metaData"][VARIANCE],nullptr));
+                    ur_set(export_template[elem.first], data_export[elem.first], F_variance, stod(meta_it->second[getMetaID(meta_it,&data_id)]["metaData"][VARIANCE],nullptr));
 
                 } else if (field == "median"){
-                    //!!!REMOVE
-                    cout << "ADD MEDIAN" << endl;
-                    ur_set(export_template[elem.first], data_export[elem.first], F_median, stod(meta_it->second[getMetaID(meta_it,ur_id)]["metaData"][MEDIAN],nullptr));
+                    //ur_set(export_template[elem.first], data_export[elem.first], F_median, stod(meta_it->second[getMetaID(meta_it,ur_id)]["metaData"][MEDIAN],nullptr));
+                    ur_set(export_template[elem.first], data_export[elem.first], F_median, stod(meta_it->second[getMetaID(meta_it,&data_id)]["metaData"][MEDIAN],nullptr));
 
                 } else if (field == "cum_average"){
-                    //!!!REMOVE
-                    cout << "ADD CUM_AVERAGE " << stod(meta_it->second[getMetaID(meta_it,ur_id)]["metaData"][CUM_AVERAGE],nullptr) << endl;
-                    ur_set(export_template[elem.first], data_export[elem.first], F_cum_average, stod(meta_it->second[getMetaID(meta_it,ur_id)]["metaData"][CUM_AVERAGE],nullptr));
+                    cout << "VERBOSE: export cum_average" << endl;
+                    ur_set(export_template[elem.first], data_export[elem.first], F_cum_average, stod(meta_it->second[getMetaID(meta_it,&data_id)]["metaData"][CUM_AVERAGE],nullptr));
+                    //ur_set(export_template[elem.first], data_export[elem.first], F_cum_average, stod(meta_it->second[2]["metaData"][CUM_AVERAGE],nullptr));
+                    //cout << "CUM AVERAGE CASE: " << getMetaID(meta_it,&data_id) << endl;
 
                 }
             }
@@ -691,7 +699,7 @@ void Analyzer::periodicExport(int period, string ur_field, uint64_t *ur_id){
 void Analyzer::runThreads(string &ur_field, uint64_t *ur_id){
     map<string, map<uint64_t, map<string, vector<string> > > >::iterator meta_it;
     meta_it = series_meta_data.find(ur_field);
-    // Run periodic check if it is set
+    // Run periodic check if it is set and skip repeated calls using flag
     if (meta_it->second[getMetaID(meta_it,ur_id)]["general"][PERIODIC_CHECK] != "-" && meta_it->second[getMetaID(meta_it,ur_id)]["metaData"][CHECKED_FLAG] == "x"){
         thread t1(&Analyzer::periodicCheck,this,stoi(meta_it->second[getMetaID(meta_it,ur_id)]["general"][PERIODIC_CHECK],nullptr),ur_field, ur_id);
         t1.detach();
@@ -699,7 +707,7 @@ void Analyzer::runThreads(string &ur_field, uint64_t *ur_id){
     }
 
     if (meta_it->second[getMetaID(meta_it,ur_id)]["general"][EXPORT_INTERVAL] != "-" && ( meta_it->second[getMetaID(meta_it,ur_id)]["metaData"][CHECKED_FLAG] == "x" || meta_it->second[getMetaID(meta_it,ur_id)]["metaData"][CHECKED_FLAG] == "p" )){
-        thread t2(&Analyzer::periodicExport,this,stoi(meta_it->second[getMetaID(meta_it,ur_id)]["general"][PERIODIC_CHECK],nullptr),ur_field, ur_id);
+        thread t2(&Analyzer::periodicExport,this,stoi(meta_it->second[getMetaID(meta_it,ur_id)]["general"][EXPORT_INTERVAL],nullptr),ur_field, ur_id);
         t2.detach();
         meta_it->second[getMetaID(meta_it,ur_id)]["metaData"][CHECKED_FLAG] = "e";
 
@@ -729,6 +737,7 @@ void Analyzer::processSeries(string ur_field, uint64_t *ur_id, double *ur_time, 
         }
         auto alert_str = analyzeData(ur_field, ur_id, ur_data, ur_time);
         sendAlert(alert_str, ur_field, ur_id, ur_time);
+        cout << "run threads " << ur_field << " " << *ur_id << endl;
         runThreads(ur_field, ur_id);
     }
 
