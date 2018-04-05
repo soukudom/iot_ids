@@ -35,17 +35,20 @@ trap_module_info_t *module_info = NULL;
 *
 * NOTE: Auto specifier in function parameter is available from c++14 -> author used C++11
 */
-void printSeries( map<string,map<string, vector<string> > >& series_meta_data){
+void printSeries( map<string,map<uint64_t, map<string, vector<string> > > >& series_meta_data){
     cout << "printSeries method" << endl;
     for (auto main_key: series_meta_data){
         cout << "main key: " << main_key.first << endl;
-         for (auto element : series_meta_data[main_key.first]) {
-            cout << " key: " << element.first << endl;
-            cout << "  values: " << endl;
-            for (auto elem: element.second){
-                cout << "   " << elem << endl;
-            }   
-        }   
+        for (auto ids: series_meta_data[main_key.first]){
+            cout << "main id: " << ids.first << endl;
+            for (auto element : series_meta_data[main_key.first][ids.first]) {
+                cout << " key: " << element.first << endl;
+                cout << "  values: " << endl;
+                for (auto elem: element.second){
+                    cout << "   " << elem << endl;
+                }   
+            }         
+        }
     }
 }
 
@@ -60,7 +63,7 @@ void printSeries( map<string,map<string, vector<string> > >& series_meta_data){
 * \param[in] verbose Verbose level
 * \returns Result of initialization. 0 and 1 is success. Other values are errors.
 */
-int initExportInterfaces(map<string, map<string, vector<string> > > &series_meta_data,  ur_template_t *** export_template, trap_ctx_t **ctx_export, void ***data_export, map<int, vector<string>  > &ur_export_fields, int verbose){
+int initExportInterfaces(map<string, map<uint64_t, map<string, vector<string> > > > &series_meta_data,  ur_template_t *** export_template, trap_ctx_t **ctx_export, void ***data_export, map<int, vector<string> > &ur_export_fields, int verbose){
     string interface_spec;      // Name of output interface
     int flag = 0;               // Flag for definig output interface name
     vector<string> field_name;  // Tmp value for export ur_values
@@ -69,33 +72,34 @@ int initExportInterfaces(map<string, map<string, vector<string> > > &series_meta
 
     // Go through the configuration data
     for (auto main_key: series_meta_data){
-        for (auto element : series_meta_data[main_key.first]) {
-            // Find the export key in configuration data
-            if (element.first == "export"){
-                // Begin initialization -> clear old tmp variables
-                flag = 0;
-                field_name.clear();
-                for (auto elem: element.second){
-                    // Skip empty values
-                    if(elem == "-"){
-                        break;
-                    }
-                    // Update tmp variables 
-                    field_name.push_back(elem);
-                    // First item found -> create export interface record
-                    if(flag == 0){
-                        interface_spec += "u:export-"+main_key.first+",";
-                        number_of_keys++;
-                        flag = 1;
-                        if (verbose >= 0 ){
-                            cout << "VERBOSE: Creating export interface: u:export-" << main_key.first << endl; 
+        for (auto ids : series_meta_data[main_key.first]) {
+            for (auto element: series_meta_data[main_key.first][ids.first]){
+                // Find the export key in configuration data
+                if (element.first == "export"){
+                    // Begin initialization -> clear old tmp variables
+                    flag = 0;
+                    field_name.clear();
+                    for (auto elem: element.second){
+                        // Skip empty values
+                        if(elem == "-"){
+                            break;
                         }
+                        // Update tmp variables 
+                        field_name.push_back(elem);
+                        // First item found -> create export interface record
+                        if(flag == 0){
+                            interface_spec += "u:export-"+main_key.first+to_string(ids.first)+",";
+                            number_of_keys++;
+                            flag = 1;
+                            if (verbose >= 0 ){
+                                cout << "VERBOSE: Creating export interface: u:export-" << main_key.first+to_string(ids.first) << endl; 
+                            }
+                        }
+                    }   
+                    // Insert tmp variables to the map structure
+                    if (flag == 1){
+                        ur_export_fields.insert(pair<int, vector<string> >(number_of_keys-1, field_name));
                     }
-                }   
-                // Insert tmp variables to the map structure
-                if (flag == 1){
-                    //pair <string, vector<string> > tmp(main_key.first,field_name); 
-                    ur_export_fields.insert(pair<int, vector<string> >(number_of_keys-1, field_name));
                 }
             }
         }
@@ -188,6 +192,7 @@ int main (int argc, char** argv){
 
 
     //printSeries(series_meta_data);
+
  
     /*
     ** interface initialization **

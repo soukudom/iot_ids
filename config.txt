@@ -43,12 +43,13 @@
 ## TEST1: DoS##
 #SOAFCount: 10;12;11;delta;-;-;-;profile(average,variance,median,cum_average,);average(-,-,-,-,-,5,0.2,0,0,);variance(-,-,-,-,-,5,0.2,0,0,);cum_average(-,-,-,-,-,5,0.2,0,0,);median(-,-,-,-,-,5,0.2,0,0,);export(-,);
 ## TEST2: DoS##
-#!!!receivedCount: 10;12;11;delta;-;-;-;profile(average,variance,median,cum_average,);average(-,-,-,-,-,5,0.2,0,0,);variance(-,-,-,-,-,5,0.2,0,0,);cum_average(-,-,-,-,-,5,0.2,0,0,);median(-,-,-,-,-,5,0.2,0,0,);export(-,);
+#receivedCount;2: 10;12;5;delta;-;-;-;profile(average,variance,median,cum_average,);average(-,-,-,-,-,5,0.2,0,0,);variance(-,-,-,-,-,5,0.2,0,0,);cum_average(-,-,-,-,-,5,0.2,0,0,);median(-,-,-,-,-,5,0.2,0,0,);export(-,);
 ## TEST3: DoS##
-#rxBytes: 5;8;0;delta;-;-;-;profile(average,variance,median,cum_average,);average(-,-,-,-,-,2,0.5,0,0,);variance(-,-,-,-,-,2,0.5,0,0,);cum_average(-,-,-,-,-,2,0.5,0,0,);median(-,-,-,-,-,2,0.5,0,0,);export(-,);
+rxBytes: 5;8;0;delta;-;-;-;profile(average,variance,median,cum_average,);average(-,-,-,-,-,2,0.5,0,0,);variance(-,-,-,-,-,2,0.5,0,0,);cum_average(-,-,-,-,-,2,0.5,0,0,);median(-,-,-,-,-,2,0.5,0,0,);export(-,);
 #######################
 ## TEST4: Periodic ##
 #VALUE: 5;5;0;simple;8;-;-;profile(median,);median(-,-,-,-,-,5,0.2,0,0,);export(-,);
 ## TEST5: Periodic ##
 #rxEvents: 5;8;0;simple;7;5;-;profile(variance,);variance(-,-,-,-,-,2,0.5,0,0,);export(-,);
+#######################
 

@@ -33,7 +33,7 @@ public:
     * Param constructor. Initialize configuration data
     * \param[in] meta_data Parse configuration data by ConfigParser class
     */
-    Analyzer(map<string, map<string, vector<string> > > meta_data, int verbose);
+    Analyzer(map<string,map<uint64_t, map<string, vector<string> > > > meta_data, int verbose);
 
     // Default destructor
     virtual ~Analyzer();
@@ -78,7 +78,7 @@ private:
     void **data_export;                                      // Unirec allocated records for export interfaces
     map<int,vector<string> >ur_export_fields; // Map with unirec values for each interface. The first key is number of interface and the second is name of record according to the configuration file (ur_field). In the last vector are profile items for export.
 
-    map<string, map<string, vector<string> > > series_meta_data; // Parsed data from configuration file by ConfigParser. Data sequence: unirec field, subsection category (profile, profile items, export, general, metaData, metaProfile, profile), config params
+    map<string, map<uint64_t, map<string, vector<string> > > > series_meta_data; // Parsed data from configuration file by ConfigParser. Data sequence: unirec field, subsection category (profile, profile items, export, general, metaData, metaProfile, profile), config params
     map<string, map<uint64_t, vector<double> > > control;             // Structure for time series data. Data sequence: unirec field, sensor ID, data series values
 
     map<string, map<uint64_t, vector<double> > > median_window; // Structure for median
@@ -119,7 +119,7 @@ private:
     * \param[in] sensor_it Iterator pointing to specific data in control structure
     * \param[in] meta_id Flag switching between based (established during init) and right now profile
     */
-    void modifyMetaData(string &ur_field, uint64_t *ur_id, map<string, map<string, vector<string> > >::iterator &meta_it, map<uint64_t, vector<double> >::iterator sensor_it, string meta_id);
+    void modifyMetaData(string &ur_field, uint64_t *ur_id, map<string, map<uint64_t, map<string, vector<string> > > >::iterator &meta_it, map<uint64_t, vector<double> >::iterator sensor_it, string meta_id);
 
     /**
     * Push data to the control structure
@@ -128,9 +128,9 @@ private:
     * \param[in] meta_it Iterator pointing to specific data in series_meta_data structure
     * \param[in] sensor_it Iterator pointing to specific data in control structure
     * \param[in] meta_id Flag switching between based (established during init) and right now profile
-    * \returns The new pushed value
+    * \returns The new pushed value and the removed value
     */
-    pair<double,double> pushData(double *ur_time, double *ur_data, map<string, map<string, vector<string> > >::iterator &meta_it, map<uint64_t, vector<double> >::iterator &sensor_it, string meta_id);
+    pair<double,double> pushData(double *ur_time, double *ur_data, uint64_t *ur_id,map<string, map<uint64_t, map<string, vector<string> > > >::iterator &meta_it, map<uint64_t, vector<double> >::iterator &sensor_it, string meta_id);
 
     /**
     * Get unirec field index for profile name
@@ -138,6 +138,14 @@ private:
     * \returs Unirec field index
     */
     int getIndex(string name);
+
+    /**
+    * Return meta ID number from configuration file 
+    * \param[in] meta_it Iterator pointing to specific data in series_meta_data structure
+    * \param[in] ur_id ID value in unirec record 
+    * \returs meta ID value
+    */
+    uint64_t getMetaID(map<string, map<uint64_t, map<string, vector<string> > > >::iterator &meta_it, uint64_t *ur_id);
 
     /**
     * Add alert to the alert structure
@@ -165,7 +173,7 @@ private:
     * \param[in] sensor_it Iterator pointing to specific data in control structure
     * \returns Median value
     */
-    double getMedian(map<uint64_t,vector<double> >::iterator &sensor_it, map<string,map<string,vector<string> > >::iterator &meta_it, string &ur_field);
+    double getMedian(map<uint64_t,vector<double> >::iterator &sensor_it, map<string, map<uint64_t, map<string,vector<string> > > >::iterator &meta_it, string &ur_field, uint64_t *ur_id);
 
     /**
     * Get moving average and variance from data series
@@ -176,7 +184,7 @@ private:
     * \param[in] meta_id Flag switching between based (established during init) and right now profile
     * \returns Pair<average, variance>
     */
-    pair<double, double> getAverageAndVariance(string &ur_field, uint64_t *ur_id, map<string,map<string, vector<string> > >::iterator &meta_it, map<uint64_t,vector<double> >::iterator &sensor_it, string meta_id);
+    pair<double, double> getAverageAndVariance(string &ur_field, uint64_t *ur_id, map<string, map<uint64_t, map<string, vector<string> > > >::iterator &meta_it, map<uint64_t,vector<double> >::iterator &sensor_it, string meta_id);
 
     /**
     * Get cumulatie moving average from data series
@@ -185,13 +193,13 @@ private:
     * \param[in] meta_id Flag switching between based (established during init) and right now profile
     * \returns Cumulative average value
     */
-    double getCumulativeAverage(map<uint64_t,vector<double> >::iterator &sensor_it, map<string, map<string, vector<string> > >::iterator &meta_it, string meta_id);
+    double getCumulativeAverage(map<uint64_t,vector<double> >::iterator &sensor_it, map<string, map<uint64_t, map<string, vector<string> > > >::iterator &meta_it, string meta_id, uint64_t *ur_id);
 
     /**
     * Print series data and meta information
     * \param[in] ur_field Name of unirec field
     */
-    void printSeries(string &ur_field);
+    void printSeries(string &ur_field, uint64_t *ur_id);
 
 /*
 * Alert detection methods
@@ -205,7 +213,7 @@ private:
     * \param[in] ur_data Value of ur_field
     * \param[in] alert_str Structure for storing all alerts
     */
-    void dataLimitCheck(map<string, map<string, vector<string> > >::iterator &meta_it, string ur_field, uint64_t *ur_id, double *ur_time ,double *ur_data, map<string,vector<string> > & alert_str);
+    void dataLimitCheck(map<string, map<uint64_t, map<string, vector<string> > > >::iterator &meta_it, string ur_field, uint64_t *ur_id, double *ur_time ,double *ur_data, map<string,vector<string> > & alert_str);
 
     /**
     * Check data change ration
@@ -217,7 +225,7 @@ private:
     * \param[in] ur_data Value of ur_field
     * \param[in] alert_str Structure for storing all alerts
     */
-    void dataChangeCheck(map<uint64_t,vector<double> >::iterator &sensor_it, map<string, map<string, vector<string> > >::iterator &meta_it, string ur_field, uint64_t *ur_id, double *ur_time ,double *ur_data, map<string,vector<string> > & alert_str);
+    void dataChangeCheck(map<uint64_t,vector<double> >::iterator &sensor_it, map<string, map<uint64_t, map<string, vector<string> > > >::iterator &meta_it, string ur_field, uint64_t *ur_id, double *ur_time ,double *ur_data, map<string,vector<string> > & alert_str);
 
     /**
     * Thread member functions
@@ -226,18 +234,21 @@ private:
     * Periodically check whether data are up to date. Run as a separate thread.
     * \param[in] period Specified period of time
     * \param[in] ur_field Name of unirec field
+    * \param[in] ur_id ID value in unirec record
     */
-    void periodicCheck(int period, string ur_field);
+    void periodicCheck(int period, string ur_field, uint64_t *ur_id);
 
     /**
     * Periodically export defined fields. Run as a separate thread.
     * \param[in] perioad Specified period of time
     * \param[in] ur_field Name of unirec field
     */
-    void periodicExport(int period, string ur_field);
+    void periodicExport(int period, string ur_field, uint64_t *ur_id);
 
     /**
     * Start monitoring thread after init phase
+    * \param[in] ur_field Name of unirec field
+    * \param[in] ur_id ID value in unirec record
     */
-    void runThreads(string &ur_field);
+    void runThreads(string &ur_field, uint64_t *ur_id);
 };

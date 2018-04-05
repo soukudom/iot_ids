@@ -12,11 +12,12 @@
 #include <iostream>
 #include <fstream>
 #include <algorithm>
+#include <sstream>
 
 using namespace std;
 
 // Number of values in meta structure
-#define DYNAMIC 15
+#define DYNAMIC 14
 
 /* 
  The following enums are used for accessing the created structures after parsing the configuraiton file.  
@@ -29,7 +30,7 @@ enum localValues {SOFT_MIN, SOFT_MAX, HARD_MIN, HARD_MAX, SOFT_PERIOD, GROW_UP, 
 enum general {SERIES_LENGTH, LEARNING_LENGTH, IGNORE_LENGTH, STORE_MODE, PERIODIC_CHECK, PERIODIC_INTERVAL, EXPORT_INTERVAL};
 
 // Parameters and fields used in analyse process
-enum meta {AVERAGE, VARIANCE, MEDIAN, CUM_AVERAGE, SX, SX2, PREV_VALUE, NEW_VALUE, LAST_TIME, ROTATE, CHECKED_FLAG, ID, OLDEST_VALUE, NEW_ORIG_VALUE, CHANGE_PERIOD};
+enum meta {AVERAGE, VARIANCE, MEDIAN, CUM_AVERAGE, SX, SX2, PREV_VALUE, NEW_VALUE, LAST_TIME, ROTATE, CHECKED_FLAG, OLDEST_VALUE, NEW_ORIG_VALUE, CHANGE_PERIOD};
 
 /*
  Parse file with configuration of unirec field.
@@ -49,9 +50,9 @@ class ConfigParser{
         /*
         * Method that returns parsed structure from configuration file
         */
-        map<string, map<string, vector<string> > > getSeries();
+        map<string, map<uint64_t, map<string, vector<string> > > > getSeries();
     private:
-        map<string, map<string, vector<string> > > series; // parsed data from configuration file. Data sequence: unirec field, subsection category (profile, profile items, export, general, metaData, metaProfile, profile), config params
+        map<string, map<uint64_t, map<string, vector<string> > > > series; // parsed data from configuration file. Data sequence: unirec field, subsection category (profile, profile items, export, general, metaData, metaProfile, profile), config params
         ifstream config; // configuration filename
 };
 
