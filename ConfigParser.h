@@ -52,9 +52,6 @@ class ConfigParser{
         */
         map<string, map<uint64_t, map<string, vector<string> > > > getSeries();
     private:
-        map<string, map<uint64_t, map<string, vector<string> > > > series; // parsed data from configuration file. Data sequence: unirec field, subsection category (profile, profile items, export, general, metaData, metaProfile, profile), config params
+        map<string, map<uint64_t, map<string, vector<string> > > > series; // parsed data from configuration file. Data sequence: unirec field, ur_id, subsection category (profile, profile items, export, general, metaData, metaProfile, profile), config params
         ifstream config; // configuration filename
 };
-
-
-//!!! PERIODIC_CHECK jsem presunul do general, protoze kdyz neprijdou data, tak se nezmeni zadna hodnota

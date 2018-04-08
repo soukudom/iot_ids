@@ -78,7 +78,7 @@ private:
     void **data_export;                                      // Unirec allocated records for export interfaces
     map<int,vector<string> >ur_export_fields; // Map with unirec values for each interface. The first key is number of interface and the second is name of record according to the configuration file (ur_field). In the last vector are profile items for export.
 
-    map<string, map<uint64_t, map<string, vector<string> > > > series_meta_data; // Parsed data from configuration file by ConfigParser. Data sequence: unirec field, subsection category (profile, profile items, export, general, metaData, metaProfile, profile), config params
+    map<string, map<uint64_t, map<string, vector<string> > > > series_meta_data; // Parsed data from configuration file by ConfigParser. Data sequence: unirec field, unirec id, subsection category (profile, profile items, export, general, metaData, metaProfile, profile), config params
     map<string, map<uint64_t, vector<double> > > control;             // Structure for time series data. Data sequence: unirec field, sensor ID, data series values
 
     map<string, map<uint64_t, vector<double> > > median_window; // Structure for median
@@ -242,6 +242,7 @@ private:
     * Periodically export defined fields. Run as a separate thread.
     * \param[in] perioad Specified period of time
     * \param[in] ur_field Name of unirec field
+    * \param[in] ur_id ID value in unirec record
     */
     void periodicExport(int period, string ur_field, uint64_t *ur_id);
 

@@ -87,7 +87,7 @@ double Analyzer::getCumulativeAverage(map<uint64_t,vector<double> >::iterator &s
         return new_value;
     }
     double delta_average = stod (meta_it->second[getMetaID(meta_it,ur_id)][meta_id][CUM_AVERAGE],nullptr); 
-    delta_average = ( new_value + ( sensor_it->second.size() ) * delta_average ) / ( sensor_it->second.size() + 1 );
+    delta_average = ( new_value + ( sensor_it->second.size() - 1 ) * delta_average ) / ( sensor_it->second.size() );
     return delta_average;
 }
 
@@ -231,7 +231,7 @@ int Analyzer::initSeries(string &ur_field, uint64_t *ur_id, double *ur_data, dou
         localID = getMetaID(meta_it,ur_id);
         if (meta_it->second.find(localID) == meta_it->second.end() && localID != 0){
             if (verbose >= 1){
-                cout << "VERBOSE: ignore field with id: " << localID << endl; 
+                cout << "VERBOSE: Ignore field with id: " << localID << endl; 
             }
             return 6; 
         }
@@ -316,7 +316,6 @@ int Analyzer::initSeries(string &ur_field, uint64_t *ur_id, double *ur_data, dou
             sensor_it = control[ur_field].find(*ur_id);
             // Modify profile values
             modifyMetaData(ur_field,ur_id,meta_it, sensor_it, "metaProfile");
-            //meta_it->second["metaProfile"][ID] = to_string(*ur_id);
             if (verbose >= 0){
                 cout << "VERBOSE: New record has been created" << endl;
             }
@@ -350,29 +349,52 @@ void Analyzer::printSeries(string &ur_field, uint64_t *ur_id){
                 cout << elem << ", ";
             }   
             cout << endl;
-    
-            cout << "   AVERAGE, VARIANCE, MEDIAN, CUM_AVERAGE, SX, SX2, PREV_VALUE, NEW_VALUE, LAST_TIME, ROTATE, CHECKED_FLAG, OLDEST_VALUE, NEW_ORIG_VALUE, CHANGE_PERIOD" << endl;
+   
+            if (verbose >= 1){ 
+                cout << "   AVERAGE, VARIANCE, MEDIAN, CUM_AVERAGE, SX, SX2, PREV_VALUE, NEW_VALUE, LAST_TIME, ROTATE, CHECKED_FLAG, OLDEST_VALUE, NEW_ORIG_VALUE, CHANGE_PERIOD" << endl;
+            } else if (verbose == 0){
+                cout << "   AVERAGE, VARIANCE, MEDIAN, CUM_AVERAGE"<< endl;
+            }
             cout << "   ";
 
+            // Set appropriate sensor ID
             localID = element.first;
             if (series_meta_data[ur_field].size() == 1){
                 if (series_meta_data[ur_field].find(0) != series_meta_data[ur_field].end()){
                     localID = 0;
                 }
             } 
-            cout << "returned localID: "  << localID << endl;
-            for (auto meta: series_meta_data[ur_field][localID]["metaProfile"] ){
-                cout.precision(1);
-                cout << fixed << meta << ", ";
+
+            if (verbose >=  1){
+                cout << "Base profile: " << endl;
+                cout << "    ";
+                for (auto meta: series_meta_data[ur_field][localID]["metaProfile"] ){
+                    cout.precision(1);
+                    cout << fixed << meta << ", ";
+                }
+                cout << endl;
+                cout << "   ";
+                cout << "Actual profile: " << endl;
+                cout << "    ";
+                for (auto meta: series_meta_data[ur_field][localID]["metaData"] ){
+                    cout.precision(1);
+                    cout << fixed << meta << ", ";
+                }
+                cout << endl;
             }
-            cout << endl;
-            cout << "   ";
-            for (auto meta: series_meta_data[ur_field][localID]["metaData"] ){
-                cout.precision(1);
-                cout << fixed << meta << ", ";
-            }
-            cout << endl;
     
+            if (verbose ==  0){
+                cout << "Base profile: " << endl;
+                cout << "    ";
+                cout.precision(1);
+                cout << fixed << series_meta_data[ur_field][localID]["metaProfile"][AVERAGE] << ", " << series_meta_data[ur_field][localID]["metaProfile"][VARIANCE] << ", " << series_meta_data[ur_field][localID]["metaProfile"][MEDIAN] << ", " << series_meta_data[ur_field][localID]["metaProfile"][CUM_AVERAGE] << endl;
+
+                cout << "   ";
+                cout << "Actual profile: " << endl;
+                cout << "    ";
+                cout.precision(1);
+                cout << fixed << series_meta_data[ur_field][localID]["metaData"][AVERAGE] << ", " << series_meta_data[ur_field][localID]["metaData"][VARIANCE] << ", " << series_meta_data[ur_field][localID]["metaData"][MEDIAN] << ", " << series_meta_data[ur_field][localID]["metaData"][CUM_AVERAGE] << endl;
+            }
     }
 }
 
@@ -455,11 +477,10 @@ void Analyzer::dataLimitCheck(map<string, map<uint64_t, map<string, vector<strin
                 // Reset counter
                 meta_it->second[getMetaID(meta_it,ur_id)][profile_values][S_MAX_LIMIT] = "0";
             }
-        // Test if hard limits are set
-        // Hard min, max limits are dependent -> test for hard min is ok
-        //} else if (meta_it->second[getMetaID(meta_it,ur_id)][profile_values][HARD_MIN] != "-"){
         } 
 
+        // Test if hard limits are set
+        // Hard min, max limits are dependent -> test for hard min is ok
         if (meta_it->second[getMetaID(meta_it,ur_id)][profile_values][HARD_MIN] != "-"){
             // Hard limit test
             // Hard limit min
@@ -486,7 +507,6 @@ void Analyzer::dataChangeCheck(map<uint64_t,vector<double> >::iterator &sensor_i
     double profile_value = 0;
     
     for (auto profile_values: meta_it->second[getMetaID(meta_it,ur_id)]["profile"]){
-        //new_value = sensor_it->second.back();
         new_value = stod(meta_it->second[getMetaID(meta_it,ur_id)]["metaData"][getIndex(profile_values)],nullptr);
         profile_value = stod(meta_it->second[getMetaID(meta_it,ur_id)]["metaProfile"][getIndex(profile_values)],nullptr);
         // Protection against zero profile values
@@ -501,7 +521,6 @@ void Analyzer::dataChangeCheck(map<uint64_t,vector<double> >::iterator &sensor_i
             if (stod(meta_it->second[getMetaID(meta_it,ur_id)]["metaData"][getIndex(profile_values)],nullptr) == 0 ){
                 alert_coef = 1; //-> mean no data grow change 
             } else {
-               // alert_coef = new_value/stod(meta_it->second["metaData"][getIndex(profile_values)],nullptr);
                 alert_coef = new_value / profile_value;
             }
             // Test grow limits
@@ -613,11 +632,7 @@ void Analyzer::periodicCheck(int period,  string ur_field, uint64_t *ur_id){
                 cout << "VERBOSE: ALERT: data period" << endl;
             }
             addAlert(ur_field, "Periodic check", alert_str);
-            // Convert ID
-            /*uint64_t*/ //ur_id = stoi(meta_it->second["metaProfile"][ID],nullptr);
-            //istringstream iss(meta_it->second["metaProfile"][ID]);
-            //iss >> ur_id;
-            /*double*/ ur_time = stod(meta_it->second[getMetaID(meta_it,&data_id)]["metaData"][LAST_TIME],nullptr);
+            ur_time = stod(meta_it->second[getMetaID(meta_it,&data_id)]["metaData"][LAST_TIME],nullptr);
             sendAlert(alert_str, ur_field, &data_id, &ur_time);
         }
        
@@ -636,17 +651,12 @@ void Analyzer::periodicCheck(int period,  string ur_field, uint64_t *ur_id){
 
             // If counter is higher than specified limit -> send an alert
             if (change_period > stod(meta_it->second[getMetaID(meta_it,&data_id)]["general"][PERIODIC_INTERVAL],nullptr)){
-                cout << "SEND ALERT" << endl;
                 map<string,vector<string> > alert_str;
                 if (verbose >= 0){
                     cout << "VERBOSE: ALERT: data hasn't been chagend long time" << endl;
                 }
                 addAlert(ur_field, "Periodic data limit check", alert_str);
-                /*uint64_t*/ //ur_id = stoi(meta_it->second["metaProfile"][ID],nullptr);
-                // Contert ID
-                //istringstream iss(meta_it->second["metaProfile"][ID]);
-                //iss >> ur_id;
-                /*double*/ ur_time = stod(meta_it->second[getMetaID(meta_it,&data_id)]["metaData"][LAST_TIME],nullptr);
+                ur_time = stod(meta_it->second[getMetaID(meta_it,&data_id)]["metaData"][LAST_TIME],nullptr);
                 sendAlert(alert_str, ur_field, &data_id, &ur_time);
             }
             
@@ -666,30 +676,19 @@ void Analyzer::periodicExport(int period, string ur_field, uint64_t *ur_id){
         sleep (period);
         for (auto elem: ur_export_fields){
             for (auto field: elem.second){
-                cout << "PERIODIC EXPORT DATA NOW" << endl;
                 // Set unirec record 
                 if (field == "average"){
-                    //!!!REMOVE cout descr
-                    cout << "ADD AVERAGE " << stod(meta_it->second[getMetaID(meta_it,ur_id)]["metaData"][AVERAGE],nullptr) << endl;
-                    //ur_set(export_template[elem.first], data_export[elem.first], F_average, stod(meta_it->second[getMetaID(meta_it,ur_id)]["metaData"][AVERAGE],nullptr));
                     ur_set(export_template[elem.first], data_export[elem.first], F_average, stod(meta_it->second[getMetaID(meta_it,&data_id)]["metaData"][AVERAGE],nullptr));
                 } else if (field == "variance") {
-                    //ur_set(export_template[elem.first], data_export[elem.first], F_variance, stod(meta_it->second[getMetaID(meta_it,ur_id)]["metaData"][VARIANCE],nullptr));
                     ur_set(export_template[elem.first], data_export[elem.first], F_variance, stod(meta_it->second[getMetaID(meta_it,&data_id)]["metaData"][VARIANCE],nullptr));
 
                 } else if (field == "median"){
-                    //ur_set(export_template[elem.first], data_export[elem.first], F_median, stod(meta_it->second[getMetaID(meta_it,ur_id)]["metaData"][MEDIAN],nullptr));
                     ur_set(export_template[elem.first], data_export[elem.first], F_median, stod(meta_it->second[getMetaID(meta_it,&data_id)]["metaData"][MEDIAN],nullptr));
 
                 } else if (field == "cum_average"){
-                    cout << "VERBOSE: export cum_average" << endl;
                     ur_set(export_template[elem.first], data_export[elem.first], F_cum_average, stod(meta_it->second[getMetaID(meta_it,&data_id)]["metaData"][CUM_AVERAGE],nullptr));
-                    //ur_set(export_template[elem.first], data_export[elem.first], F_cum_average, stod(meta_it->second[2]["metaData"][CUM_AVERAGE],nullptr));
-                    //cout << "CUM AVERAGE CASE: " << getMetaID(meta_it,&data_id) << endl;
-
                 }
             }
-            
             // Send data for periodic export
             trap_ctx_send(export_ifc, elem.first, data_export[elem.first], ur_rec_size(export_template[elem.first], data_export[elem.first]));
         }
@@ -737,7 +736,6 @@ void Analyzer::processSeries(string ur_field, uint64_t *ur_id, double *ur_time, 
         }
         auto alert_str = analyzeData(ur_field, ur_id, ur_data, ur_time);
         sendAlert(alert_str, ur_field, ur_id, ur_time);
-        cout << "run threads " << ur_field << " " << *ur_id << endl;
         runThreads(ur_field, ur_id);
     }
 
@@ -748,6 +746,3 @@ void Analyzer::processSeries(string ur_field, uint64_t *ur_id, double *ur_time, 
 /* 
  * END TIME SERIES PROCESS
  */
-
-
-

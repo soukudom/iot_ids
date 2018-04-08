@@ -50,13 +50,13 @@ ConfigParser::ConfigParser(string configFile) : config(configFile){
                 // Parse next config field
                 delimiter = line.find(";");
                 value = line.substr(0, delimiter);
-                /*size_t*/ multi_item = value.find("(");
+                multi_item = value.find("(");
                 // Composite key has been found -> name(param1, param2, ...,)
                 if (multi_item != string::npos){
                     // Parse and save to the proper index
                     multi_key = value.substr(0, multi_item);
                     value.erase(0,multi_item+1);
-                    /*size_t */multi_item = value.find(")");
+                    multi_item = value.find(")");
                     value = value.substr(0, multi_item); 
                     // Parse values for composite key
                     size_t multi_value = value.find(",");
