@@ -105,22 +105,21 @@ pair<double, double> Analyzer::getAverageAndVariance(string &ur_field, uint64_t 
 
     // Initialize time window
     if (x[ur_field][*ur_id].size() < series_length ){
-        //add new data to time window
+        // Add new data to time window
         x[ur_field][*ur_id].push_back(new_value);
         x2[ur_field][*ur_id].push_back(new_value*new_value);
+        series_length = x[ur_field][*ur_id].size();
 
         // Count sum of values in window
         meta_it->second[getMetaID(meta_it,ur_id)][meta_id][SX] = to_string(new_value + stod(meta_it->second[getMetaID(meta_it,ur_id)][meta_id][SX],nullptr));
         meta_it->second[getMetaID(meta_it,ur_id)][meta_id][SX2] = to_string(new_value*new_value+ stod(meta_it->second[getMetaID(meta_it,ur_id)][meta_id][SX2],nullptr));
         
-        return pair<double, double> (-1,-1);
-    // Count moving average and variance
+    // Time window is full -> rotate and modify meta structures 
     } else {
         // Change values in time window
         rotate(x[ur_field][*ur_id].begin(), x[ur_field][*ur_id].begin()+1, x[ur_field][*ur_id].end());
         rotate(x2[ur_field][*ur_id].begin(), x2[ur_field][*ur_id].begin()+1, x2[ur_field][*ur_id].end());
 
-        // Do a calculation
         double new_x = new_value; 
         double new_x2 = new_value*new_value;
 
@@ -132,15 +131,20 @@ pair<double, double> Analyzer::getAverageAndVariance(string &ur_field, uint64_t 
 
         meta_it->second[getMetaID(meta_it,ur_id)][meta_id][SX] = to_string(stod(meta_it->second[getMetaID(meta_it,ur_id)][meta_id][SX],nullptr) + new_x - y);
         meta_it->second[getMetaID(meta_it,ur_id)][meta_id][SX2] = to_string(stod(meta_it->second[getMetaID(meta_it,ur_id)][meta_id][SX2],nullptr) + new_x2 - y2);
-
+    }
+        // Do a calculation and return result
         sx = stod(meta_it->second[getMetaID(meta_it,ur_id)][meta_id][SX],nullptr);
         sx2 = stod(meta_it->second[getMetaID(meta_it,ur_id)][meta_id][SX2],nullptr);
 
         average = sx/series_length; 
-        variance = (series_length*sx2 - (sx*sx)) / (series_length*(series_length-1));
+        // NaN protection
+        if (series_length == 1){
+            variance = 0;
+        } else {
+            variance = (series_length*sx2 - (sx*sx)) / (series_length*(series_length-1));
+        }
         
         return pair<double,double> (average, variance);
-    }
 }
 /* 
  * END CALCALULATION METHODS
@@ -253,7 +257,7 @@ int Analyzer::initSeries(string &ur_field, uint64_t *ur_id, double *ur_data, dou
         if ( sensor_it != control[ur_field].end() ){
 
             // Learning profile phase
-            if ( learning_length >= sensor_it->second.size() + rotate_cnt){
+            if ( learning_length > sensor_it->second.size() + rotate_cnt){
                 if (verbose >= 0){
                     cout << "VERBOSE: Series created -> learning phase" << endl;
                 }
@@ -526,14 +530,14 @@ void Analyzer::dataChangeCheck(map<uint64_t,vector<double> >::iterator &sensor_i
             // Test grow limits
             if (alert_coef > stod(meta_it->second[getMetaID(meta_it,ur_id)][profile_values][GROW_UP],nullptr)){
                 if (verbose >= 0){
-                    cout << "VERBOSE: ALERT: GROW UP with value" << alert_coef << endl;
+                    cout << "VERBOSE: ALERT: GROW UP with value " << alert_coef << endl;
                 }
                 addAlert(profile_values, "Higher grow limit", alert_str);
                 
             }
             if (alert_coef < stod(meta_it->second[getMetaID(meta_it,ur_id)][profile_values][GROW_DOWN],nullptr)){
                 if (verbose >= 0){
-                    cout << "VERBOSE: ALERT: GROW DOWN" << endl;
+                    cout << "VERBOSE: ALERT: GROW DOWN " << endl;
                 }
                 addAlert(profile_values, "Lower grow limit", alert_str);
             }
