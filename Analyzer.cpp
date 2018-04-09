@@ -80,14 +80,19 @@ double Analyzer::getMedian(map<uint64_t,vector<double> >::iterator &sensor_it, m
 }
 
 double Analyzer::getCumulativeAverage(map<uint64_t,vector<double> >::iterator &sensor_it, map<string, map<uint64_t, map<string, vector<string> > > >::iterator &meta_it, string meta_id, uint64_t *ur_id){
-    // Alg source: https://en.wikipedia.org/wiki/Moving_average
+    // Alg description: https://en.wikipedia.org/wiki/Moving_average
+    // Update number of received items
+    double cnt = stod (meta_it->second[getMetaID(meta_it,ur_id)][meta_id][CNT],nullptr); 
+    cnt++;
+    meta_it->second[getMetaID(meta_it,ur_id)][meta_id][CNT] = to_string(cnt);
+
     double new_value = sensor_it->second.back();
     // First value exception
     if (sensor_it->second.size() == 1){
         return new_value;
     }
     double delta_average = stod (meta_it->second[getMetaID(meta_it,ur_id)][meta_id][CUM_AVERAGE],nullptr); 
-    delta_average = ( new_value + ( sensor_it->second.size() - 1 ) * delta_average ) / ( sensor_it->second.size() );
+    delta_average = ((new_value + ( (cnt-1) * delta_average )) / ( cnt )) ;
     return delta_average;
 }
 
@@ -299,6 +304,7 @@ int Analyzer::initSeries(string &ur_field, uint64_t *ur_id, double *ur_data, dou
                     meta_it->second[getMetaID(meta_it,ur_id)]["metaData"][SX] = meta_it->second[getMetaID(meta_it,ur_id)]["metaProfile"][SX];
                     meta_it->second[getMetaID(meta_it,ur_id)]["metaData"][SX2] = meta_it->second[getMetaID(meta_it,ur_id)]["metaProfile"][SX2];
                     meta_it->second[getMetaID(meta_it,ur_id)]["metaData"][PREV_VALUE] = meta_it->second[getMetaID(meta_it,ur_id)]["metaProfile"][PREV_VALUE];
+                    meta_it->second[getMetaID(meta_it,ur_id)]["metaData"][CNT] = meta_it->second[getMetaID(meta_it,ur_id)]["metaProfile"][CNT];
                 }
                 return 0;
             }

@@ -45,7 +45,7 @@
 ## TEST2: DoS##
 #receivedCount;2: 10;12;5;delta;-;-;-;profile(average,variance,median,cum_average,);average(-,-,-,-,-,5,0.2,0,0,);variance(-,-,-,-,-,5,0.2,0,0,);cum_average(-,-,-,-,-,5,0.2,0,0,);median(-,-,-,-,-,5,0.2,0,0,);export(-,);
 ## TEST3: DoS##
-rxBytes: 5;8;0;delta;-;-;-;profile(average,variance,median,cum_average,);average(-,-,-,-,-,2,0.5,0,0,);variance(-,-,-,-,-,2,0.5,0,0,);cum_average(-,-,-,-,-,2,0.5,0,0,);median(-,-,-,-,-,2,0.5,0,0,);export(-,);
+#rxBytes: 5;8;0;delta;-;-;-;profile(average,variance,median,cum_average,);average(-,-,-,-,-,2,0.5,0,0,);variance(-,-,-,-,-,2,0.5,0,0,);cum_average(-,-,-,-,-,2,0.5,0,0,);median(-,-,-,-,-,2,0.5,0,0,);export(-,);
 #######################
 ## TEST4: Periodic ##
 #VALUE: 5;5;0;simple;8;-;-;profile(median,);median(-,-,-,-,-,5,0.2,0,0,);export(-,);
@@ -71,13 +71,13 @@ rxBytes: 5;8;0;delta;-;-;-;profile(average,variance,median,cum_average,);average
 ## TEST11: Measurement ##
 #SOAFCount: 3;3;11;delta;-;-;-;profile(average,variance,median,cum_average,);average(-,-,-,-,-,5,0.2,0,0,);variance(-,-,-,-,-,5,0.2,0,0,);cum_average(-,-,-,-,-,5,0.2,0,0,);median(-,-,-,-,-,5,0.2,0,0,);export(-,);
 ## TEST12: Measurement ##
-#SOAFCount: 5;6;11;delta;-;-;-;profile(average,variance,median,cum_average,);average(-,-,-,-,-,5,0.2,0,0,);variance(-,-,-,-,-,5,0.2,0,0,);cum_average(-,-,-,-,-,5,0.2,0,0,);median(-,-,-,-,-,5,0.2,0,0,);export(-,);
+#SOAFCount: 5;5;11;delta;-;-;-;profile(average,variance,median,cum_average,);average(-,-,-,-,-,5,0.2,0,0,);variance(-,-,-,-,-,5,0.2,0,0,);cum_average(-,-,-,-,-,5,0.2,0,0,);median(-,-,-,-,-,5,0.2,0,0,);export(-,);
 ## TEST13: Measurement ##
-#SOAFCount: 10;10;11;delta;-;-;-;profile(average,variance,median,cum_average,);average(-,-,-,-,-,5,0.2,0,0,);variance(-,-,-,-,-,5,0.2,0,0,);cum_average(-,-,-,-,-,5,0.2,0,0,);median(-,-,-,-,-,5,0.2,0,0,);export(-,);
+SOAFCount: 10;10;11;delta;-;-;-;profile(average,variance,median,cum_average,);average(-,-,-,-,-,5,0.2,0,0,);variance(-,-,-,-,-,5,0.2,0,0,);cum_average(-,-,-,-,-,5,0.2,0,0,);median(-,-,-,-,-,5,0.2,0,0,);export(-,);
 ## TEST14: Measurement ##
 #SOAFCount: 15;15;11;delta;-;-;-;profile(average,variance,median,cum_average,);average(-,-,-,-,-,5,0.2,0,0,);variance(-,-,-,-,-,5,0.2,0,0,);cum_average(-,-,-,-,-,5,0.2,0,0,);median(-,-,-,-,-,5,0.2,0,0,);export(-,);
 ## TEST15: Measurement ##
-#SOAFCount: 20;20;11;delta;-;-;-;profile(average,variance,median,cum_average,);average(-,-,-,-,-,5,0.2,0,0,);variance(-,-,-,-,-,5,0.2,0,0,);cum_average(-,-,-,-,-,5,0.2,0,0,);median(-,-,-,-,-,5,0.2,0,0,);export(-,);
+SOAFCount: 20;20;11;delta;-;-;-;profile(average,variance,median,cum_average,);average(-,-,-,-,-,5,0.2,0,0,);variance(-,-,-,-,-,5,0.2,0,0,);cum_average(-,-,-,-,-,5,0.2,0,0,);median(-,-,-,-,-,5,0.2,0,0,);export(-,);
 ## TEST16: Measurement ##
 #SOAFCount: 30;30;11;delta;-;-;-;profile(average,variance,median,cum_average,);average(-,-,-,-,-,5,0.2,0,0,);variance(-,-,-,-,-,5,0.2,0,0,);cum_average(-,-,-,-,-,5,0.2,0,0,);median(-,-,-,-,-,5,0.2,0,0,);export(-,);
 
