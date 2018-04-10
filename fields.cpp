@@ -16,14 +16,15 @@ char *ur_field_names_static[] = {
    "broadcastWriteCount",
    "callbacks",
    "CANCount",
-   "cum_average",
    "dropped",
    "err_value",
    "GW_ID",
    "ID",
    "lastRequestRTT",
    "lastResponseRTT",
-   "median",
+   "moving_average",
+   "moving_median",
+   "moving_variance",
    "NAKCount",
    "netBusy",
    "noACK",
@@ -57,7 +58,6 @@ char *ur_field_names_static[] = {
    "txErrors",
    "txScos",
    "VALUE",
-   "variance",
    "writeCount",
    "alert_desc",
    "profile_key",
@@ -77,14 +77,15 @@ short ur_field_sizes_static[] = {
    8, /* broadcastWriteCount */
    8, /* callbacks */
    8, /* CANCount */
-   8, /* cum_average */
    8, /* dropped */
    8, /* err_value */
    8, /* GW_ID */
    8, /* ID */
    8, /* lastRequestRTT */
    8, /* lastResponseRTT */
-   8, /* median */
+   8, /* moving_average */
+   8, /* moving_median */
+   8, /* moving_variance */
    8, /* NAKCount */
    8, /* netBusy */
    8, /* noACK */
@@ -118,7 +119,6 @@ short ur_field_sizes_static[] = {
    8, /* txErrors */
    8, /* txScos */
    8, /* VALUE */
-   8, /* variance */
    8, /* writeCount */
    -1, /* alert_desc */
    -1, /* profile_key */
@@ -138,14 +138,15 @@ ur_field_type_t ur_field_types_static[] = {
    UR_TYPE_DOUBLE, /* broadcastWriteCount */
    UR_TYPE_DOUBLE, /* callbacks */
    UR_TYPE_DOUBLE, /* CANCount */
-   UR_TYPE_DOUBLE, /* cum_average */
    UR_TYPE_DOUBLE, /* dropped */
    UR_TYPE_DOUBLE, /* err_value */
    UR_TYPE_UINT64, /* GW_ID */
    UR_TYPE_UINT64, /* ID */
    UR_TYPE_DOUBLE, /* lastRequestRTT */
    UR_TYPE_DOUBLE, /* lastResponseRTT */
-   UR_TYPE_DOUBLE, /* median */
+   UR_TYPE_DOUBLE, /* moving_average */
+   UR_TYPE_DOUBLE, /* moving_median */
+   UR_TYPE_DOUBLE, /* moving_variance */
    UR_TYPE_DOUBLE, /* NAKCount */
    UR_TYPE_DOUBLE, /* netBusy */
    UR_TYPE_DOUBLE, /* noACK */
@@ -179,7 +180,6 @@ ur_field_type_t ur_field_types_static[] = {
    UR_TYPE_DOUBLE, /* txErrors */
    UR_TYPE_DOUBLE, /* txScos */
    UR_TYPE_DOUBLE, /* VALUE */
-   UR_TYPE_DOUBLE, /* variance */
    UR_TYPE_DOUBLE, /* writeCount */
    UR_TYPE_STRING, /* alert_desc */
    UR_TYPE_STRING, /* profile_key */

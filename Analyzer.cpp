@@ -35,8 +35,8 @@ void Analyzer::setExportInterface(trap_ctx_t *export_ifc, ur_template_t **export
 /* 
  * BEGIN CALCALULATION METHODS
  */
-double Analyzer::getMedian(map<uint64_t,vector<double> >::iterator &sensor_it, map<string, map<uint64_t, map<string, vector<string> > > >::iterator &meta_it, string &ur_field, uint64_t *ur_id){
-    // Basic non-moving median calculation
+double Analyzer::getMovingMedian(map<uint64_t,vector<double> >::iterator &sensor_it, map<string, map<uint64_t, map<string, vector<string> > > >::iterator &meta_it, string &ur_field, uint64_t *ur_id){
+    // Moving median calculation
 
     // First value exception
     if (sensor_it->second.size() == 1){
@@ -64,7 +64,7 @@ double Analyzer::getMedian(map<uint64_t,vector<double> >::iterator &sensor_it, m
         }        
     }
 
-    // Calculate median value
+    // Calculate moving median value
     size_t size = median_window[ur_field][sensor_it->first].size();
 
     // Sort modified vector by the new value
@@ -79,8 +79,7 @@ double Analyzer::getMedian(map<uint64_t,vector<double> >::iterator &sensor_it, m
     return median;
 }
 
-double Analyzer::getCumulativeAverage(map<uint64_t,vector<double> >::iterator &sensor_it, map<string, map<uint64_t, map<string, vector<string> > > >::iterator &meta_it, string meta_id, uint64_t *ur_id){
-    // Alg description: https://en.wikipedia.org/wiki/Moving_average
+double Analyzer::getOverallAverage(map<uint64_t,vector<double> >::iterator &sensor_it, map<string, map<uint64_t, map<string, vector<string> > > >::iterator &meta_it, string meta_id, uint64_t *ur_id){
     // Update number of received items
     double cnt = stod (meta_it->second[getMetaID(meta_it,ur_id)][meta_id][CNT],nullptr); 
     cnt++;
@@ -91,12 +90,12 @@ double Analyzer::getCumulativeAverage(map<uint64_t,vector<double> >::iterator &s
     if (sensor_it->second.size() == 1){
         return new_value;
     }
-    double delta_average = stod (meta_it->second[getMetaID(meta_it,ur_id)][meta_id][CUM_AVERAGE],nullptr); 
+    double delta_average = stod (meta_it->second[getMetaID(meta_it,ur_id)][meta_id][AVERAGE],nullptr); 
     delta_average = ((new_value + ( (cnt-1) * delta_average )) / ( cnt )) ;
     return delta_average;
 }
 
-pair<double, double> Analyzer::getAverageAndVariance(string &ur_field, uint64_t *ur_id, map<string, map<uint64_t, map<string, vector<string> > > >::iterator &meta_it, map<uint64_t, vector<double> >::iterator &sensor_it, string meta_id){
+pair<double, double> Analyzer::getMovingAverageAndVariance(string &ur_field, uint64_t *ur_id, map<string, map<uint64_t, map<string, vector<string> > > >::iterator &meta_it, map<uint64_t, vector<double> >::iterator &sensor_it, string meta_id){
     // Alg source: https://www.dsprelated.com/showthread/comp.dsp/97276-1.php
     map<uint64_t, vector<double> >::iterator x_it;
     map<uint64_t, vector<double> >::iterator x2_it;
@@ -169,10 +168,10 @@ pair<double, double> Analyzer::pushData(double *ur_time, double *ur_data, uint64
     // Save data based on store mode
     if (store_mode == "simple"){
         new_value = *ur_data;
-    } else if (store_mode == "average"){
-        double average = stod (meta_it->second[getMetaID(meta_it,ur_id)][meta_id][AVERAGE],nullptr);
+    } /*else if (store_mode == "average"){
+        double average = stod (meta_it->second[getMetaID(meta_it,ur_id)][meta_id][MOV_AVERAGE],nullptr);
         new_value = *ur_data - average;
-    } else if (store_mode == "delta"){
+    }*/ else if (store_mode == "delta"){
         double prev_value = stod (meta_it->second[getMetaID(meta_it,ur_id)][meta_id][PREV_VALUE],nullptr);
         new_value = *ur_data - prev_value;
         meta_it->second[getMetaID(meta_it,ur_id)][meta_id][PREV_VALUE] = to_string(*ur_data);
@@ -206,22 +205,23 @@ void Analyzer::modifyMetaData(string &ur_field, uint64_t *ur_id ,map<string, map
 
     // Determine profile values
     for (auto profile_values:  meta_it->second[getMetaID(meta_it,ur_id)]["profile"]){
-        if ( profile_values == "median" ){
-            // Median method
-            meta_it->second[getMetaID(meta_it,ur_id)][meta_id][MEDIAN] = to_string(getMedian(sensor_it,meta_it,ur_field,ur_id));
-        } else if (profile_values == "average" || profile_values == "variance") {
+        if ( profile_values == "moving_median" ){
+            // Moving median method
+            meta_it->second[getMetaID(meta_it,ur_id)][meta_id][MOV_MEDIAN] = to_string(getMovingMedian(sensor_it,meta_it,ur_field,ur_id));
+        } else if (profile_values == "moving_average" || profile_values == "moving_variance") {
+            cout << "MOVING AVERAGE CALLED " << endl;
             // Moving varinace and average method
             // Skip unnecessary calls
             if (flag == 1 ){
                 continue;
             }
-            pair<double, double> determine_values = getAverageAndVariance(ur_field, ur_id, meta_it, sensor_it,meta_id);
-            meta_it->second[getMetaID(meta_it,ur_id)][meta_id][AVERAGE] = to_string(determine_values.first);
-            meta_it->second[getMetaID(meta_it,ur_id)][meta_id][VARIANCE] = to_string(determine_values.second);
+            pair<double, double> determine_values = getMovingAverageAndVariance(ur_field, ur_id, meta_it, sensor_it,meta_id);
+            meta_it->second[getMetaID(meta_it,ur_id)][meta_id][MOV_AVERAGE] = to_string(determine_values.first);
+            meta_it->second[getMetaID(meta_it,ur_id)][meta_id][MOV_VARIANCE] = to_string(determine_values.second);
             flag = 1;
-        } else if (profile_values == "cum_average"){
-            // Cum moving average method
-            meta_it->second[getMetaID(meta_it,ur_id)][meta_id][CUM_AVERAGE] = to_string(getCumulativeAverage(sensor_it, meta_it,meta_id,ur_id));
+        } else if (profile_values == "average"){
+            // Overall average method
+            meta_it->second[getMetaID(meta_it,ur_id)][meta_id][AVERAGE] = to_string(getOverallAverage(sensor_it, meta_it,meta_id,ur_id));
         }
     }
 }
@@ -292,15 +292,15 @@ int Analyzer::initSeries(string &ur_field, uint64_t *ur_id, double *ur_data, dou
             // Learning phase has been finished
             } else {
                 // Check if init phase is finished for the first time and copy init values
-                if ( meta_it->second[getMetaID(meta_it,ur_id)]["metaData"][AVERAGE] == "x"){
+                if ( meta_it->second[getMetaID(meta_it,ur_id)]["metaData"][MOV_AVERAGE] == "x"){
                     if (verbose >= 0){
                         cout << "VERBOSE: learning phase finished -> start analyzing" << endl;
                     }
 
+                    meta_it->second[getMetaID(meta_it,ur_id)]["metaData"][MOV_AVERAGE] = meta_it->second[getMetaID(meta_it,ur_id)]["metaProfile"][MOV_AVERAGE];
+                    meta_it->second[getMetaID(meta_it,ur_id)]["metaData"][MOV_VARIANCE] = meta_it->second[getMetaID(meta_it,ur_id)]["metaProfile"][MOV_VARIANCE];
+                    meta_it->second[getMetaID(meta_it,ur_id)]["metaData"][MOV_MEDIAN] = meta_it->second[getMetaID(meta_it,ur_id)]["metaProfile"][MOV_MEDIAN];
                     meta_it->second[getMetaID(meta_it,ur_id)]["metaData"][AVERAGE] = meta_it->second[getMetaID(meta_it,ur_id)]["metaProfile"][AVERAGE];
-                    meta_it->second[getMetaID(meta_it,ur_id)]["metaData"][VARIANCE] = meta_it->second[getMetaID(meta_it,ur_id)]["metaProfile"][VARIANCE];
-                    meta_it->second[getMetaID(meta_it,ur_id)]["metaData"][MEDIAN] = meta_it->second[getMetaID(meta_it,ur_id)]["metaProfile"][MEDIAN];
-                    meta_it->second[getMetaID(meta_it,ur_id)]["metaData"][CUM_AVERAGE] = meta_it->second[getMetaID(meta_it,ur_id)]["metaProfile"][CUM_AVERAGE];
                     meta_it->second[getMetaID(meta_it,ur_id)]["metaData"][SX] = meta_it->second[getMetaID(meta_it,ur_id)]["metaProfile"][SX];
                     meta_it->second[getMetaID(meta_it,ur_id)]["metaData"][SX2] = meta_it->second[getMetaID(meta_it,ur_id)]["metaProfile"][SX2];
                     meta_it->second[getMetaID(meta_it,ur_id)]["metaData"][PREV_VALUE] = meta_it->second[getMetaID(meta_it,ur_id)]["metaProfile"][PREV_VALUE];
@@ -315,11 +315,11 @@ int Analyzer::initSeries(string &ur_field, uint64_t *ur_id, double *ur_data, dou
             // Init variables by zeros in case of delta store mode
             if (store_mode == "delta"){
                 tmp.push_back(0);
-                meta_it->second[getMetaID(meta_it,ur_id)]["metaProfile"][AVERAGE] = to_string(0);
+                //meta_it->second[getMetaID(meta_it,ur_id)]["metaProfile"][MOV_AVERAGE] = to_string(0);
             // Init variables by first received value
             } else{
                 tmp.push_back(*ur_data);
-                meta_it->second[getMetaID(meta_it,ur_id)]["metaProfile"][AVERAGE] = to_string(*ur_data);
+                //meta_it->second[getMetaID(meta_it,ur_id)]["metaProfile"][MOV_AVERAGE] = to_string(*ur_data);
             }
             control[ur_field].insert(pair<uint64_t, vector<double> >(*ur_id,tmp));
             meta_it->second[getMetaID(meta_it,ur_id)]["metaProfile"][PREV_VALUE] = to_string(*ur_data);
@@ -361,9 +361,9 @@ void Analyzer::printSeries(string &ur_field, uint64_t *ur_id){
             cout << endl;
    
             if (verbose >= 1){ 
-                cout << "   AVERAGE, VARIANCE, MEDIAN, CUM_AVERAGE, SX, SX2, PREV_VALUE, NEW_VALUE, LAST_TIME, ROTATE, CHECKED_FLAG, OLDEST_VALUE, NEW_ORIG_VALUE, CHANGE_PERIOD" << endl;
+                cout << "   MOV_AVERAGE, MOV_VARIANCE, MOV_MEDIAN, AVERAGE, SX, SX2, PREV_VALUE, NEW_VALUE, LAST_TIME, ROTATE, CHECKED_FLAG, OLDEST_VALUE, NEW_ORIG_VALUE, CHANGE_PERIOD" << endl;
             } else if (verbose == 0){
-                cout << "   AVERAGE, VARIANCE, MEDIAN, CUM_AVERAGE"<< endl;
+                cout << "   MOV_AVERAGE, MOV_VARIANCE, MOV_MEDIAN, AVERAGE"<< endl;
             }
             cout << "   ";
 
@@ -397,27 +397,27 @@ void Analyzer::printSeries(string &ur_field, uint64_t *ur_id){
                 cout << "Base profile: " << endl;
                 cout << "    ";
                 cout.precision(1);
-                cout << fixed << series_meta_data[ur_field][localID]["metaProfile"][AVERAGE] << ", " << series_meta_data[ur_field][localID]["metaProfile"][VARIANCE] << ", " << series_meta_data[ur_field][localID]["metaProfile"][MEDIAN] << ", " << series_meta_data[ur_field][localID]["metaProfile"][CUM_AVERAGE] << endl;
+                cout << fixed << series_meta_data[ur_field][localID]["metaProfile"][MOV_AVERAGE] << ", " << series_meta_data[ur_field][localID]["metaProfile"][MOV_VARIANCE] << ", " << series_meta_data[ur_field][localID]["metaProfile"][MOV_MEDIAN] << ", " << series_meta_data[ur_field][localID]["metaProfile"][AVERAGE] << endl;
 
                 cout << "   ";
                 cout << "Actual profile: " << endl;
                 cout << "    ";
                 cout.precision(1);
-                cout << fixed << series_meta_data[ur_field][localID]["metaData"][AVERAGE] << ", " << series_meta_data[ur_field][localID]["metaData"][VARIANCE] << ", " << series_meta_data[ur_field][localID]["metaData"][MEDIAN] << ", " << series_meta_data[ur_field][localID]["metaData"][CUM_AVERAGE] << endl;
+                cout << fixed << series_meta_data[ur_field][localID]["metaData"][MOV_AVERAGE] << ", " << series_meta_data[ur_field][localID]["metaData"][MOV_VARIANCE] << ", " << series_meta_data[ur_field][localID]["metaData"][MOV_MEDIAN] << ", " << series_meta_data[ur_field][localID]["metaData"][AVERAGE] << endl;
             }
     }
 }
 
 // Get field index for connected keyword
 int Analyzer::getIndex(string name){
-    if (name == "median"){
-        return MEDIAN;
+    if (name == "moving_median"){
+        return MOV_MEDIAN;
+    } else if (name == "moving_average"){
+        return MOV_AVERAGE;
+    } else if (name == "moving_variance"){
+        return MOV_VARIANCE;
     } else if (name == "average"){
         return AVERAGE;
-    } else if (name == "variance"){
-        return VARIANCE;
-    } else if (name == "cum_average"){
-        return CUM_AVERAGE;
     } else if (name == "new_value"){
         return NEW_VALUE;
     } else {
@@ -687,16 +687,16 @@ void Analyzer::periodicExport(int period, string ur_field, uint64_t *ur_id){
         for (auto elem: ur_export_fields){
             for (auto field: elem.second){
                 // Set unirec record 
-                if (field == "average"){
+                if (field == "moving_average"){
+                    ur_set(export_template[elem.first], data_export[elem.first], F_moving_average, stod(meta_it->second[getMetaID(meta_it,&data_id)]["metaData"][MOV_AVERAGE],nullptr));
+                } else if (field == "moving_variance") {
+                    ur_set(export_template[elem.first], data_export[elem.first], F_moving_variance, stod(meta_it->second[getMetaID(meta_it,&data_id)]["metaData"][MOV_VARIANCE],nullptr));
+
+                } else if (field == "moving_median"){
+                    ur_set(export_template[elem.first], data_export[elem.first], F_moving_median, stod(meta_it->second[getMetaID(meta_it,&data_id)]["metaData"][MOV_MEDIAN],nullptr));
+
+                } else if (field == "average"){
                     ur_set(export_template[elem.first], data_export[elem.first], F_average, stod(meta_it->second[getMetaID(meta_it,&data_id)]["metaData"][AVERAGE],nullptr));
-                } else if (field == "variance") {
-                    ur_set(export_template[elem.first], data_export[elem.first], F_variance, stod(meta_it->second[getMetaID(meta_it,&data_id)]["metaData"][VARIANCE],nullptr));
-
-                } else if (field == "median"){
-                    ur_set(export_template[elem.first], data_export[elem.first], F_median, stod(meta_it->second[getMetaID(meta_it,&data_id)]["metaData"][MEDIAN],nullptr));
-
-                } else if (field == "cum_average"){
-                    ur_set(export_template[elem.first], data_export[elem.first], F_cum_average, stod(meta_it->second[getMetaID(meta_it,&data_id)]["metaData"][CUM_AVERAGE],nullptr));
                 }
             }
             // Send data for periodic export

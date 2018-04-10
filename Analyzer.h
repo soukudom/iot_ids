@@ -81,7 +81,7 @@ private:
     map<string, map<uint64_t, map<string, vector<string> > > > series_meta_data; // Parsed data from configuration file by ConfigParser. Data sequence: unirec field, unirec id, subsection category (profile, profile items, export, general, metaData, metaProfile, profile), config params
     map<string, map<uint64_t, vector<double> > > control;             // Structure for time series data. Data sequence: unirec field, sensor ID, data series values
 
-    map<string, map<uint64_t, vector<double> > > median_window; // Structure for median
+    map<string, map<uint64_t, vector<double> > > median_window; // Structure for moving median
     /*
     * Buffers for moving variance
     */
@@ -169,11 +169,11 @@ private:
 * Profile determination methods
 */
     /**
-    * Get median from data series
+    * Get moving median from data series
     * \param[in] sensor_it Iterator pointing to specific data in control structure
-    * \returns Median value
+    * \returns Moving median value
     */
-    double getMedian(map<uint64_t,vector<double> >::iterator &sensor_it, map<string, map<uint64_t, map<string,vector<string> > > >::iterator &meta_it, string &ur_field, uint64_t *ur_id);
+    double getMovingMedian(map<uint64_t,vector<double> >::iterator &sensor_it, map<string, map<uint64_t, map<string,vector<string> > > >::iterator &meta_it, string &ur_field, uint64_t *ur_id);
 
     /**
     * Get moving average and variance from data series
@@ -184,16 +184,16 @@ private:
     * \param[in] meta_id Flag switching between based (established during init) and right now profile
     * \returns Pair<average, variance>
     */
-    pair<double, double> getAverageAndVariance(string &ur_field, uint64_t *ur_id, map<string, map<uint64_t, map<string, vector<string> > > >::iterator &meta_it, map<uint64_t,vector<double> >::iterator &sensor_it, string meta_id);
+    pair<double, double> getMovingAverageAndVariance(string &ur_field, uint64_t *ur_id, map<string, map<uint64_t, map<string, vector<string> > > >::iterator &meta_it, map<uint64_t,vector<double> >::iterator &sensor_it, string meta_id);
 
     /**
-    * Get cumulatie moving average from data series
+    * Get overall average from data series
     * \param[in] sensor_it Iterator pointing to specific data in control structure
     * \param[in] meta_it Iterator pointing to specific data in series_meta_data structure
     * \param[in] meta_id Flag switching between based (established during init) and right now profile
-    * \returns Cumulative average value
+    * \returns overall average value
     */
-    double getCumulativeAverage(map<uint64_t,vector<double> >::iterator &sensor_it, map<string, map<uint64_t, map<string, vector<string> > > >::iterator &meta_it, string meta_id, uint64_t *ur_id);
+    double getOverallAverage(map<uint64_t,vector<double> >::iterator &sensor_it, map<string, map<uint64_t, map<string, vector<string> > > >::iterator &meta_it, string meta_id, uint64_t *ur_id);
 
     /**
     * Print series data and meta information
