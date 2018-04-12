@@ -209,7 +209,6 @@ void Analyzer::modifyMetaData(string &ur_field, uint64_t *ur_id ,map<string, map
             // Moving median method
             meta_it->second[getMetaID(meta_it,ur_id)][meta_id][MOV_MEDIAN] = to_string(getMovingMedian(sensor_it,meta_it,ur_field,ur_id));
         } else if (profile_values == "moving_average" || profile_values == "moving_variance") {
-            cout << "MOVING AVERAGE CALLED " << endl;
             // Moving varinace and average method
             // Skip unnecessary calls
             if (flag == 1 ){
@@ -315,11 +314,9 @@ int Analyzer::initSeries(string &ur_field, uint64_t *ur_id, double *ur_data, dou
             // Init variables by zeros in case of delta store mode
             if (store_mode == "delta"){
                 tmp.push_back(0);
-                //meta_it->second[getMetaID(meta_it,ur_id)]["metaProfile"][MOV_AVERAGE] = to_string(0);
             // Init variables by first received value
             } else{
                 tmp.push_back(*ur_data);
-                //meta_it->second[getMetaID(meta_it,ur_id)]["metaProfile"][MOV_AVERAGE] = to_string(*ur_data);
             }
             control[ur_field].insert(pair<uint64_t, vector<double> >(*ur_id,tmp));
             meta_it->second[getMetaID(meta_it,ur_id)]["metaProfile"][PREV_VALUE] = to_string(*ur_data);
