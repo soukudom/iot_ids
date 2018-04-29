@@ -39,7 +39,6 @@ class ConfigParser{
     public:
         /*
         * Constructor 
-        * Parse data in configuration file into series structure
         * /param[in] configFile Name of configuration file
         */
         ConfigParser(string configFile);
@@ -51,6 +50,10 @@ class ConfigParser{
         * Method that returns parsed structure from configuration file
         */
         map<string, map<uint64_t, map<string, vector<string> > > > getSeries();
+        /*
+        * Parse data in configuration file into series structure
+        */
+        void parseFile();
     private:
         map<string, map<uint64_t, map<string, vector<string> > > > series; // parsed data from configuration file. Data sequence: unirec field, ur_id, subsection category (profile, profile items, export, general, metaData, metaProfile, profile), config params
         ifstream config; // configuration filename

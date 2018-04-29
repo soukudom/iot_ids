@@ -10,7 +10,10 @@
 using namespace std;
 
 // Constructor
-ConfigParser::ConfigParser(string configFile) : config(configFile){
+ConfigParser::ConfigParser(string configFile) : config(configFile){}
+
+// Parse configuration file
+void ConfigParser::parseFile(){
     if (config.is_open()){
         // Local tmp store variables
         string line;         // One line from configuration file
@@ -86,14 +89,15 @@ ConfigParser::ConfigParser(string configFile) : config(configFile){
                 series[main_key][main_id]["metaData"].push_back("x");
             }
         }
-        config.close();
     } else {
-        cerr << "ERROR: Unable to open the configuration fle " << configFile << endl;
+        cerr << "ERROR: Unable to open the configuration fle " << endl;
     }
 } 
 
 // Destructor
-ConfigParser::~ConfigParser() = default;
+ConfigParser::~ConfigParser(){
+    config.close();
+}
 
 // Getter function
 map<string, map<uint64_t, map<string, vector<string> > > > ConfigParser::getSeries(){

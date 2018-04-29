@@ -188,10 +188,11 @@ int main (int argc, char** argv){
 
     // Parse created configuration file
     ConfigParser cp("config.txt");
+    cp.parseFile();
     auto series_meta_data = cp.getSeries();
 
 
-    //printSeries(series_meta_data);
+    printSeries(series_meta_data);
 
  
     /*

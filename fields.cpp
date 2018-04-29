@@ -5,6 +5,7 @@
 char *ur_field_names_static[] = {
    "ACKCount",
    "ACKWaiting",
+   "aclMtu",
    "aclPackets",
    "address",
    "average",
@@ -66,6 +67,7 @@ char *ur_field_names_static[] = {
 short ur_field_sizes_static[] = {
    8, /* ACKCount */
    8, /* ACKWaiting */
+   8, /* aclMtu */
    8, /* aclPackets */
    8, /* address */
    8, /* average */
@@ -127,6 +129,7 @@ short ur_field_sizes_static[] = {
 ur_field_type_t ur_field_types_static[] = {
    UR_TYPE_DOUBLE, /* ACKCount */
    UR_TYPE_DOUBLE, /* ACKWaiting */
+   UR_TYPE_DOUBLE, /* aclMtu */
    UR_TYPE_DOUBLE, /* aclPackets */
    UR_TYPE_DOUBLE, /* address */
    UR_TYPE_DOUBLE, /* average */
@@ -185,5 +188,5 @@ ur_field_type_t ur_field_types_static[] = {
    UR_TYPE_STRING, /* profile_key */
    UR_TYPE_STRING, /* ur_key */
 };
-ur_static_field_specs_t UR_FIELD_SPECS_STATIC = {ur_field_names_static, ur_field_sizes_static, ur_field_types_static, 59};
-ur_field_specs_t ur_field_specs = {ur_field_names_static, ur_field_sizes_static, ur_field_types_static, 59, 59, 59, NULL, UR_UNINITIALIZED};
+ur_static_field_specs_t UR_FIELD_SPECS_STATIC = {ur_field_names_static, ur_field_sizes_static, ur_field_types_static, 60};
+ur_field_specs_t ur_field_specs = {ur_field_names_static, ur_field_sizes_static, ur_field_types_static, 60, 60, 60, NULL, UR_UNINITIALIZED};
